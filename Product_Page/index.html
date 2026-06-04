@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products Page</title>
+    <link rel="stylesheet" href="../output.css">
+    <style>
+        .select-size input:checked +span{
+            color: blue;
+            font-weight: 600;
+        }
+        .select-color input:checked +span{
+            transform: scale(0.7);
+            box-shadow: 0 0 0 4px #fff, 0 0 0 6px #000;
+        }
+        .btn.active{
+            background: #553ff0;
+        }
+    </style>
+</head>
+<body>
+    <div class="w-full min-h-screen bg-[#d0eaff] flex items-center justify-center">
+        <div class="product w-9/10 max-w-187.5 flex">
+            <div class="gallery basis-[47%] bg-[#241e20] shadow-[-10px_5px_10px_10px_rgba(0,0,0,0.1)] scale-[1.08] relative">
+                <img src="images/image1.png" class="w-full block pt-25 " id="productImg">
+                <div class="controls absolute bottom-10 right-5">
+                    <span class="btn active block w-2.5 h-2.5 m-2.5 rounded-full bg-[rgba(255,255,255,0.5)] cursor-pointer"></span>
+                    <span class="btn block w-2.5 h-2.5 m-2.5 rounded-full bg-[rgba(255,255,255,0.5)] cursor-pointer"></span>
+                    <span class="btn block w-2.5 h-2.5 m-2.5 rounded-full bg-[rgba(255,255,255,0.5)] cursor-pointer"></span>
+                </div>
+            </div>
+            <div class="details basis-[53%] bg-white p-10 pl-15 shadow-[-10px_5px_10px_10px_rgba(0,0,0,0.1)] text-[13px] font-medium text-[#777]">
+                <h1 class="text-[#333] text-4xl font-bold">Casual T Shrit</h1>
+                <h2 class="text-[#555] text-3xl font-bold my-2">$15.00</h2>
+                <h3 class="text-[#00d874] mb-5 text-lg">30% OFF</h3>
+                <p>Wranler is na American manufacturer of jeans and other clothing items, particularly workwear.</p>
+                <form class="text-[15px] font-medium">
+                    <div class="select-size flex items-center mt-12.5">
+                        <p class="w-17.5">Size</p>            
+                        <label for="small">
+                            <input type="radio" name="size" id="small" class="hidden">
+                            <span class="p-1.25 mr-2.5 cursor-pointer">S</span>
+                        </label>
+                        <label for="medium">
+                            <input type="radio" name="size" id="medium" class="hidden">
+                            <span class="p-1.25 mr-2.5 cursor-pointer">M</span>
+                        </label>
+                        <label for="large">
+                            <input type="radio" name="size" id="large" class="hidden">
+                            <span class="p-1.25 mr-2.5 cursor-pointer">L</span>
+                        </label>
+                        <label for="x-large">
+                            <input type="radio" name="size" id="x-large" class="hidden">
+                            <span class="p-1.25 mr-2.5 cursor-pointer">XL</span>
+                        </label>
+                        <label for="xx-large">
+                            <input type="radio" name="size" id="xx-large" class="hidden">
+                            <span class="p-1.25 mr-2.5 cursor-pointer">XXL</span>
+                        </label>
+                    </div>
+                    <div class="select-color flex items-center mt-5">
+                        <p class="w-17.5">Color</p>
+                        <label for="red">
+                            <input type="radio" name="color" id="red" class="hidden">
+                            <span class="color-1 bg-red-500 inline-block w-3.75 h-3.75 rounded-full mr-3.75 cursor-pointer"></span>
+                        </label>
+                        <label for="green">
+                            <input type="radio" name="color" id="green" class="hidden">
+                            <span class="color-2 bg-green-500 inline-block w-3.75 h-3.75 rounded-full mr-3.75 cursor-pointer"></span>
+                        </label>
+                        <label for="blue">
+                            <input type="radio" name="color" id="blue" class="hidden">
+                            <span class="color-3 bg-blue-500 inline-block w-3.75 h-3.75 rounded-full mr-3.75 cursor-pointer"></span>
+                        </label>
+                        <label for="pink">
+                            <input type="radio" name="color" id="pink" class="hidden">
+                            <span class="color-4 bg-pink-500 inline-block w-3.75 h-3.75 rounded-full mr-3.75 cursor-pointer"></span>
+                        </label>
+                    </div>
+                    <div class="select-qty flex items-center mt-5">
+                        <p class="w-18.75">Quantity</p>
+                        <input type="number" value="1" class="bg-[#eee] border-0 outline-0 p-[2px_2px_2px_15px] w-12.5 rounded-xl">
+                    </div>
+                    <button class="bg-[#553ff0] text-white w-full p-2.5 rounded-4xl border-0 outline-0 mt-12.5 shadow-[0_10px_10px_rgba(85,63,240,0.25)] cursor-pointer">Buy Now</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
