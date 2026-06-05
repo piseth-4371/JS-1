@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptocurrency</title>
+    <link rel="stylesheet" href="../output.css">
+    <script src="https://code.jquery.com/jquery-4.0.0.min.js" integrity="sha256-OaVG6prZf4v69dPg6PhVattBXkcOWQB62pdZ3ORyrao=" crossorigin="anonymous"></script>
+    <style>
+        .con{
+            background-image: url('images/background.png');
+        }
+    </style>
+</head>
+<body>
+    <div class="con w-full h-screen bg-cover bg-center px-[7%] text-white">
+        <nav class="w-full py-5 flex items-center">
+            <img src="images/logo.png" class="logo w-12.5 cursor-pointer">
+            <ul class="flex-1">
+                <li class="inline-block my-2.5 mx-5"><a href="#" class="text-white no-underline">Market</a></li>
+                <li class="inline-block my-2.5 mx-5"><a href="#" class="text-white no-underline">Features</a></li>
+                <li class="inline-block my-2.5 mx-5"><a href="#" class="text-white no-underline">White Papers</a></li>
+                <li class="inline-block my-2.5 mx-5"><a href="#" class="text-white no-underline">About is</a></li>
+            </ul>
+            <a href="" class="btn text-white no-underline border rounded-3xl py-2.5 px-7.5">EN</a>
+        </nav>
+
+        <div class="content mt-[12%] mb-3.75">
+            <h1 class="text-[88px] font-bold">BUY & SELL <br>
+                <span class="text-[#ff960b]"> Crypto</span>
+            </h1>
+            <p class="text-xl mt-2.5">World's biggest Cryptocurrency exchange available on web <br> as well as monile phone.</p>
+            <a href="#" class="btn inline-block mt-7.5 bg-[#ff960b] text-white no-underline py-3.75 px-7.5 rounded-3xl">EXPLORE MORE</a>
+        </div>
+        <div class="coin-list absolute right-1/10 bottom-12.5 flex items-center">
+            <div class="coin flex items-center text-2xl mx-3.75 text-[#ff960b] border border-white py-5 px-7.5 rounded-lg">
+                <img src="images/bitcoin.png" class="w-10 mr-2.5">
+                <div>
+                    <h3 class="text-white text-2xl font-semibold mb-1.25">$<span id="bitcoin"></span></h3>
+                    <p>Bitcoin</p>
+                </div>
+            </div>
+             <div class="coin flex items-center text-2xl mx-3.75 text-[#ff960b] border border-white py-5 px-7.5 rounded-lg">
+                <img src="images/ethereum.png" class="w-10 mr-2.5">
+                <div>
+                    <h3 class="text-white text-2xl font-semibold mb-1.25">$<span id="ethereum"></span></h3>
+                    <p>Ethereum</p>
+                </div>
+            </div>
+             <div class="coin flex items-center text-2xl mx-3.75 text-[#ff960b] border border-white py-5 px-7.5 rounded-lg">
+                <img src="images/dogecoin.png" class="w-10 mr-2.5">
+                <div>
+                    <h3 class="text-white text-2xl font-semibold mb-1.25">$<span id="dogecoin"></span></h3>
+                    <p>Dogecoin</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
