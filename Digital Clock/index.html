@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Clock</title>
+    <link rel="stylesheet" href="../output.css">
+</head>
+<body>
+    <div class="hero w-full min-h-screen bg-[linear-gradient(45deg,#08001f,#30197d)] text-white relative">
+        <div class="container w-200 h-45 absolute top-1/2 left-1/2 transform-[translate(-50%,-50%)] before:content-[''] before:w-45 before:h-45 before:bg-[#f41b75] before:rounded-[5px] before:absolute before:-left-12.5 before:-top-12.5 before:-z-10 after:content-[''] after:w-45 after:h-45 after:bg-[#419aff] after:rounded-full after:absolute after:-right-7.5 after:-bottom-12.5 after:-z-10"> 
+            <div class="clock w-full h-full bg-[rgba(235,0,255,0.11)] rounded-[10px] flex items-center justify-center backdrop-blur-2xl">
+                <span id="hrs" class="text-[80px] w-27.5 inline-block text-center relative after:content-['HOURS'] after:text-[16px] after:w-27.5 after:absolute after:-bottom-1.25 after:left-1/2 after:-translate-x-1/2">00</span>
+                <span class="text-[80px] w-27.5 inline-block text-center relative after:text-[16px] after:w-27.5 after:absolute after:-bottom-1.25 after:left-1/2 after:-translate-x-1/2">:</span>
+                <span id="min" class="text-[80px] w-27.5 inline-block text-center relative after:content-['MINS'] after:text-[16px] after:w-27.5 after:absolute after:-bottom-1.25 after:left-1/2 after:-translate-x-1/2">00</span>
+                <span class="text-[80px] w-27.5 inline-block text-center relative after:text-[16px] after:w-27.5 after:absolute after:-bottom-1.25 after:left-1/2 after:-translate-x-1/2">:</span>
+                <span id="sec" class="text-[80px] w-27.5 inline-block text-center relative after:content-['SEC'] after:text-[16px] after:w-27.5 after:absolute after:-bottom-1.25 after:left-1/2 after:-translate-x-1/2">00</span>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
