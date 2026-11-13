@@ -30,7 +30,7 @@ def main() -> int:
     p.add_argument("--days", type=int, default=30, help="MT5: how many days back")
     p.add_argument("--start", type=date.fromisoformat, help="Dukascopy: first day (YYYY-MM-DD)")
     p.add_argument("--end", type=date.fromisoformat, help="Dukascopy: day after the last day")
-    p.add_argument("--pause", type=float, default=3.0, help="Dukascopy: seconds to wait between days")
+    p.add_argument("--pause", type=float, default=6.0, help="Dukascopy: normal seconds between days (grows after blocks)")
     a = p.parse_args()
 
     settings = get_settings()
@@ -87,9 +87,11 @@ def main() -> int:
         if not a.start:
             print("ERROR: --start is required for dukascopy")
             return 1
+        import random
         import time
 
         end_day = a.end or date.today()
+        sched = dk.PoliteSchedule(a.pause)
         source, symbol = dk.SOURCE, dk.INSTRUMENT
         # Save day by day, so an interruption keeps everything downloaded so far.
         have = days_present(source, symbol)
@@ -97,23 +99,29 @@ def main() -> int:
             if (date(d.year, d.month, d.day) - date(1970, 1, 1)).days in have:
                 continue  # already downloaded earlier
             day_bars = None
-            for attempt in range(1, 13):           # up to ~2 hours of waiting per blocked day
+            waited = 0.0
+            while day_bars is None:
                 try:
                     day_bars = dk.fetch_day(d)
-                    break
+                except dk.RateLimited as e:
+                    wait = sched.on_block()
+                    waited += wait
+                    if waited > 6 * 3600:
+                        print("ERROR: blocked for 6 hours. Progress is saved; run the same command later.")
+                        return 1
+                    print(f"  {d}  rate-limited ({e}); waiting {wait / 60:.0f} min, then pause {sched.pause:.0f}s "
+                          f"between days  [{datetime.now():%H:%M}]", flush=True)
+                    time.sleep(wait)
                 except ConnectionError as e:
-                    print(f"  {d}  server busy/blocked ({e}); waiting 10 min (attempt {attempt}/12)", flush=True)
-                    time.sleep(600)
-            if day_bars is None:
-                print("ERROR: still blocked after 2 hours. Progress is saved; run the same command later.")
-                return 1
+                    print(f"  {d}  network error ({e}); waiting 2 min  [{datetime.now():%H:%M}]", flush=True)
+                    time.sleep(120)
             report = validate_bars(day_bars)
             if not report.ok:
                 print(f"  {d}  validation failed, NOT saved: {report.errors[:3]}")
                 continue
             save_bars(day_bars)
             print(f"  {d}  {len(day_bars):>5} bars saved", flush=True)
-            time.sleep(a.pause)  # be polite to the free server
+            time.sleep(sched.on_success() * random.uniform(0.8, 1.3))  # polite, slightly irregular
         n, first, last = count_bars(source, symbol)
         fmt = lambda ts: datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d %H:%M UTC") if ts else "-"  # noqa: E731
         print(f"Database now has {n} {symbol} M1 bars from {source}: {fmt(first)} -> {fmt(last)}")

@@ -52,3 +52,37 @@ def test_mt5_summer_offset_utc_plus_3():
     athens = ZoneInfo("Europe/Athens")
     # 16:30 server time in July = 13:30 UTC
     assert server_to_utc(fake_epoch(2026, 7, 10, 16, 30), athens) == fake_epoch(2026, 7, 10, 13, 30)
+
+
+# ---------------------------------------------------------------- polite downloading (Dukascopy 503s)
+def test_rate_limit_stops_immediately_without_hammering(monkeypatch):
+    from datetime import date as _date
+
+    import pytest as _pytest
+
+    from app.core.sources import dukascopy_source as dk
+    calls = []
+
+    def blocked(url, timeout):
+        calls.append(url)
+        raise dk.RateLimited("HTTP 503")
+
+    monkeypatch.setattr(dk, "_get", blocked)
+    monkeypatch.setattr(dk.time, "sleep", lambda s: None)
+    with _pytest.raises(dk.RateLimited):
+        dk.fetch_day(_date(2021, 3, 1))
+    assert len(calls) == 1                     # one request, then the caller waits
+
+
+def test_polite_schedule_backs_off_and_recovers():
+    from app.core.sources.dukascopy_source import PoliteSchedule
+    s = PoliteSchedule(base_pause=6)
+    waits = [s.on_block() for _ in range(7)]
+    assert [w / 60 for w in waits] == [2, 4, 8, 16, 30, 30, 30]   # minutes
+    assert s.pause == 60                       # normal pause grew (capped at 60 s)
+    for _ in range(500):
+        s.on_success()
+    assert 6 < s.pause < 7                     # slowly comes back (x0.8 every 50 good days)
+    for _ in range(500):
+        s.on_success()
+    assert s.pause == 6                        # ... down to the base pause

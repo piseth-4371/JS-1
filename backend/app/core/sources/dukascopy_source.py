@@ -8,7 +8,10 @@ File format (decoded and checked on 2026-11-13):
   Prices are integers; divide by PRICE_SCALE.
 
 Dukascopy fills closed-market minutes with flat zero-volume candles; we drop those.
-HTTPS to the datafeed timed out from this PC, so we try HTTPS first then plain HTTP.
+Rate limit: the server answers HTTP 503 when we ask too fast. On a 503 we STOP at once
+(RateLimited) and let the caller wait - retrying straight away only prolongs the block.
+Plain HTTP only redirects to HTTPS (checked 2026-11-13); it is kept as a fallback for
+connection errors (HTTPS timed out from this PC once), never for 503s.
 """
 from __future__ import annotations
 
@@ -48,6 +51,10 @@ def parse_candles(raw_lzma: bytes, day: date, instrument: str = INSTRUMENT, scal
     return bars
 
 
+class RateLimited(ConnectionError):
+    """HTTP 503/429: the server wants us to slow down. Wait before the next request."""
+
+
 def _get(url: str, timeout: float) -> bytes | None:
     req = urllib.request.Request(url, headers={"User-Agent": "nas100-control-center/0.1"})
     try:
@@ -56,14 +63,20 @@ def _get(url: str, timeout: float) -> bytes | None:
     except urllib.error.HTTPError as e:
         if e.code == 404:
             return None  # no data that day (weekend/holiday)
+        if e.code in (429, 503):
+            raise RateLimited(f"HTTP {e.code}") from e
         raise
 
 
 _preferred_scheme = "https"
 
 
-def fetch_day(day: date, instrument: str = INSTRUMENT, timeout: float = 20, retries: int = 4) -> list[Bar]:
-    """One day of bars. Retries with growing pauses (the server rate-limits with HTTP 503)."""
+def fetch_day(day: date, instrument: str = INSTRUMENT, timeout: float = 20, retries: int = 3) -> list[Bar]:
+    """One day of bars.
+
+    RateLimited (503/429) is raised IMMEDIATELY - the caller must wait (see scripts/backfill.py).
+    Network errors (timeouts, resets) are retried a few times, also trying the other scheme.
+    """
     global _preferred_scheme
     last_exc: Exception | None = None
     for attempt in range(retries):
@@ -73,10 +86,36 @@ def fetch_day(day: date, instrument: str = INSTRUMENT, timeout: float = 20, retr
                 raw = _get(day_url(day, instrument, scheme), timeout)
                 _preferred_scheme = scheme  # remember what worked
                 return [] if raw is None else parse_candles(raw, day, instrument)
+            except RateLimited:
+                raise
             except (urllib.error.URLError, TimeoutError, OSError) as e:
                 last_exc = e
-        time.sleep(5 * (attempt + 1) ** 2)  # 5s, 20s, 45s, 80s
+        time.sleep(5 * (attempt + 1))
     raise ConnectionError(f"Dukascopy download failed for {day}: {last_exc}")
+
+
+class PoliteSchedule:
+    """How long to wait: a normal pause between days that grows after each block (and slowly
+    shrinks back), plus an exponential wait while blocked: 2, 4, 8, 16, 30, 30 ... minutes."""
+
+    def __init__(self, base_pause: float = 6.0, max_pause: float = 60.0):
+        self.base, self.max = base_pause, max_pause
+        self.pause = base_pause
+        self.blocked_in_a_row = 0
+        self.ok_in_a_row = 0
+
+    def on_success(self) -> float:
+        self.blocked_in_a_row = 0
+        self.ok_in_a_row += 1
+        if self.ok_in_a_row % 50 == 0:
+            self.pause = max(self.base, self.pause * 0.8)
+        return self.pause
+
+    def on_block(self) -> float:
+        self.ok_in_a_row = 0
+        self.blocked_in_a_row += 1
+        self.pause = min(self.max, self.pause * 1.5)
+        return min(30 * 60, 120 * 2 ** (self.blocked_in_a_row - 1))
 
 
 def trading_days(start: date, end: date):
