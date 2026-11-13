@@ -21,19 +21,17 @@ from sqlalchemy.orm import Session
 from app.core import state
 from app.core.fills import Costs, check_exit, net_points, try_fill
 from app.core.market_data import Bar
+from app.core.markets import NAS100, Market
 from app.core.risk import AccountState, Instrument
 from app.core.strategies.base import Order
 from app.models import OrderRow, PositionRow
 
 NY = ZoneInfo("America/New_York")
-HOLD_FROM_MIN, FLAT_MIN = 180, 955   # same as features.HOLD_FROM / FLAT_AT
 
 
 def can_hold(ts: int) -> bool:
-    """Positions may be open only 03:00-15:55 New York on weekdays (London open .. before the US close)."""
-    d = datetime.fromtimestamp(ts, NY)
-    m = d.hour * 60 + d.minute
-    return d.weekday() < 5 and HOLD_FROM_MIN <= m < FLAT_MIN
+    """NAS100 book: positions may be open only 03:00-15:55 New York on weekdays."""
+    return NAS100.can_hold(ts)
 
 
 def ny_day_start(ts: int) -> int:
@@ -48,8 +46,16 @@ def ny_week_start(ts: int) -> int:
 
 
 class PaperBroker:
-    def __init__(self, s: Session, instrument: Instrument, starting_balance: float, costs: Costs | None = None):
+    """One book (NAS100 or BTC) of the shared paper account.
+
+    Orders/positions are managed only for this book's strategies (`market.owns`),
+    but account limits (equity, trades today, open positions) count BOTH books.
+    """
+
+    def __init__(self, s: Session, instrument: Instrument, starting_balance: float, costs: Costs | None = None,
+                 market: Market = NAS100):
         self.s, self.inst, self.start, self.costs = s, instrument, starting_balance, costs or Costs()
+        self.market = market
 
     # ------------------------------------------------------------- account
     def _realized_before(self, ts: int | None = None) -> float:
@@ -73,16 +79,24 @@ class PaperBroker:
             day_start_equity=self.start + self._realized_before(day0),
             week_start_equity=self.start + self._realized_before(week0),
             trades_today=len(today),
-            open_positions=len(self.open_positions()),
+            open_positions=len(self.all_open_positions()),
             consecutive_losses=streak,
             kill_switch=state.get_bool(self.s, "kill_switch"),
         )
 
-    def open_positions(self) -> list[PositionRow]:
+    def all_open_positions(self) -> list[PositionRow]:
         return list(self.s.scalars(select(PositionRow).where(PositionRow.status == "open")))
 
-    def pending_orders(self) -> list[OrderRow]:
+    def all_pending_orders(self) -> list[OrderRow]:
         return list(self.s.scalars(select(OrderRow).where(OrderRow.status == "pending")))
+
+    def open_positions(self) -> list[PositionRow]:
+        """This book only."""
+        return [p for p in self.all_open_positions() if self.market.owns(p.strategy)]
+
+    def pending_orders(self) -> list[OrderRow]:
+        """This book only."""
+        return [o for o in self.all_pending_orders() if self.market.owns(o.strategy)]
 
     # ------------------------------------------------------------- orders
     @staticmethod
@@ -126,10 +140,10 @@ class PaperBroker:
                 self._cancel(o, "invalidated (5m close beyond FVG)", ts)
 
     def process_minute(self, b: Bar) -> None:
-        cursor = int(state.get(self.s, "broker_cursor_ts"))
+        cursor = int(state.get(self.s, self.market.cursor_key))
         if b.ts <= cursor:
             return  # already processed (e.g. after a restart)
-        hold = can_hold(b.ts)
+        hold = self.market.can_hold(b.ts)
         for p in self.open_positions():
             if not hold:
                 self._close(p, b.open, "session_end", b.ts)
@@ -143,8 +157,8 @@ class PaperBroker:
             if b.ts >= o.expiry_ts or not hold:
                 self._cancel(o, "expired", b.ts)
                 continue
-            if self.open_positions():
-                continue
+            if self.all_open_positions():
+                continue                     # one position in total, across both books
             fill = try_fill(o.kind, o.side, o.entry, b.open, b.high, b.low)
             if fill is None:
                 continue
@@ -162,7 +176,7 @@ class PaperBroker:
             hit = check_exit(p.side, p.stop, p.target, b.open, b.high, b.low, fill_bar=True)
             if hit:
                 self._close(p, hit[0], hit[1], b.ts)
-        state.put(self.s, "broker_cursor_ts", b.ts)
+        state.put(self.s, self.market.cursor_key, b.ts)
 
     # ------------------------------------------------------------- safety
     def kill(self, last_price: float | None, ts: int) -> None:
@@ -177,7 +191,7 @@ class PaperBroker:
     def reconcile(self, now_ts: int) -> list[str]:
         """Repair impossible states after a restart. Returns what was fixed."""
         fixes = []
-        opens = self.open_positions()
+        opens = self.all_open_positions()
         if len(opens) > self.inst_max_positions:
             state.put(self.s, "kill_switch", True)
             fixes.append(f"{len(opens)} open positions (max {self.inst_max_positions}) - kill switch turned ON")

@@ -11,7 +11,9 @@ DEFAULTS = {
     "kill_switch": "false",
     "auto_trading": "false",          # OFF by default: the engine only records signals
     "active_strategy": "trend_fvg",
-    "broker_cursor_ts": "0",          # last 1-minute bar the paper broker processed
+    "broker_cursor_ts": "0",          # last 1-minute bar the paper broker processed (NAS100 book)
+    "active_strategy_btc": "btc_weekend_trend_fvg",
+    "broker_cursor_ts_btc": "0",      # same, BTC weekend book
 }
 
 

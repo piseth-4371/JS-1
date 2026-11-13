@@ -2,9 +2,9 @@ import { useState } from "react";
 import { nyTime, postJSON } from "../api.js";
 
 const STRATEGIES = ["trend_fvg", "sweep_mss_fvg", "orb", "vwap_reversion", "silver_bullet",
-  "london_trend_fvg", "london_sweep_mss_fvg"];
+  "london_trend_fvg", "london_sweep_mss_fvg", "btc_weekend_trend_fvg"];
 
-export default function Header({ ov, market, refresh, setError }) {
+export default function Header({ ov, market, refresh, setError, view, book, setBook, bookInfo }) {
   const [busy, setBusy] = useState(false);
 
   const act = async (fn) => {
@@ -48,7 +48,7 @@ export default function Header({ ov, market, refresh, setError }) {
         }`}
         title="Where the prices come from"
       >
-        Data: {ov?.data_source ?? "-"} · last bar {nyTime(market?.last_bar_ts)} NY
+        Data: {bookInfo?.source ?? ov?.data_source ?? "-"} {bookInfo?.symbol ?? ""} · last bar {nyTime(market?.last_bar_ts)} NY
         {stale ? " · STALE / market closed" : " · live"}
       </span>
 
@@ -56,16 +56,38 @@ export default function Header({ ov, market, refresh, setError }) {
         Engine: {ov?.engine_enabled ? "running" : "off (set ENGINE_ENABLED=true)"}
       </span>
 
+      <span
+        className={`rounded-md px-2 py-1 text-xs font-semibold ring-1 ${
+          ov?.trading_now ? "bg-emerald-500/15 text-emerald-300 ring-emerald-500/40" : "bg-slate-800 text-slate-400 ring-slate-700"
+        }`}
+        title="NAS100 trades weekdays 03:00-15:55 NY; BTC trades weekends Fri 17:00 - Sun 17:00 NY"
+      >
+        Trading now: {ov?.trading_now === "btc" ? "BTC (weekend)" : ov?.trading_now === "nas100" ? "NAS100" : "nothing (both closed)"}
+      </span>
+
+      <div className="flex overflow-hidden rounded-md ring-1 ring-slate-700" role="group" aria-label="Which market to show">
+        {(ov?.markets ?? [{ key: "nas100", label: "NAS100" }, { key: "btc", label: "BTC" }]).map((m) => (
+          <button
+            key={m.key}
+            className={`px-2 py-1 text-xs ${view === m.key ? "bg-sky-600 text-white" : "bg-slate-800 text-slate-300"}`}
+            onClick={() => setBook(book === m.key ? null : m.key)}
+            title={m.open_now ? "trading window open now" : "outside its trading window"}
+          >
+            {m.key === "btc" ? "BTC" : "NAS100"}{m.open_now ? " ●" : ""}
+          </button>
+        ))}
+      </div>
+
       <div className="ml-auto flex flex-wrap items-center gap-2">
         <label className="flex items-center gap-1 text-sm">
           <span className="label">Strategy</span>
           <select
             className="rounded-md border border-slate-700 bg-slate-800 px-2 py-1 text-sm"
-            value={ov?.active_strategy ?? ""}
+            value={bookInfo?.active_strategy ?? ov?.active_strategy ?? ""}
             disabled={busy || !ov}
             onChange={(e) => act(() => postJSON("/api/controls/strategy", { name: e.target.value }))}
           >
-            {STRATEGIES.map((s) => (
+            {STRATEGIES.filter((s) => s.startsWith("btc_") === (view === "btc")).map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>

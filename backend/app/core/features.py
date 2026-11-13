@@ -39,7 +39,7 @@ def _add_ny(df: pd.DataFrame) -> pd.DataFrame:
     ny = pd.to_datetime(df["ts"], unit="s", utc=True).dt.tz_convert(NY)
     df["ny_date"] = ny.dt.date
     df["mod"] = ny.dt.hour * 60 + ny.dt.minute
-    df["weekday"] = ny.dt.weekday
+    df["weekday"] = ny.dt.day_of_week
     ldn = pd.to_datetime(df["ts"], unit="s", utc=True).dt.tz_convert(LONDON)
     df["lmod"] = ldn.dt.hour * 60 + ldn.dt.minute
     return df
@@ -62,7 +62,8 @@ class Frame:
     m1: dict           # numpy arrays of the 1-minute bars (for fills)
 
 
-def build_frame(m1: pd.DataFrame) -> Frame:
+def build_frame(m1: pd.DataFrame, hold_mask=None) -> Frame:
+    """hold_mask(mod, weekday) -> bool array: minutes a position may be open (default: NAS100 hours)."""
     m1 = _add_ny(m1.copy())
     df = resample_complete(m1, 5)
     df = _add_ny(df)
@@ -97,6 +98,10 @@ def build_frame(m1: pd.DataFrame) -> Frame:
     on = df[~rth].groupby("sess_date").agg(onh=("h", "max"), onl=("l", "min"))
     df = df.merge(on, left_on="ny_date", right_index=True, how="left")
 
+    # UTC-day VWAP (24/7 markets such as BTC).
+    utc_day = pd.to_datetime(df["ts"], unit="s", utc=True).dt.date
+    df["dvwap"] = session_vwap(df["h"], df["l"], df["c"], df["v"], utc_day)
+
     # London session VWAP: from 08:00 London until the NY cash open.
     ldn = (df["lmod"] >= LONDON_OPEN) & (df["mod"] < RTH_OPEN)
     df["lvwap"] = np.nan
@@ -111,11 +116,14 @@ def build_frame(m1: pd.DataFrame) -> Frame:
 
     cols = ["ts", "o", "h", "l", "c", "v", "mod", "close_ts", "consec", "atr", "atr_q10", "atr_q95",
             "close_15", "ema20_15", "ema50_15", "vwap", "pdh", "pdl", "onh", "onl",
-            "lmod", "lvwap", "ash", "asl"]
+            "lmod", "lvwap", "ash", "asl", "dvwap"]
     a = {k: df[k].to_numpy() for k in cols}
     a["ny_date"] = df["ny_date"].to_numpy()
     a["weekday"] = df["weekday"].to_numpy()
     m = {k: m1[k].to_numpy() for k in ["ts", "o", "h", "l", "c"]}
-    m["can_hold"] = ((m1["mod"] >= HOLD_FROM) & (m1["mod"] < FLAT_AT) & (m1["weekday"] < 5)).to_numpy()
+    if hold_mask is None:
+        m["can_hold"] = ((m1["mod"] >= HOLD_FROM) & (m1["mod"] < FLAT_AT) & (m1["weekday"] < 5)).to_numpy()
+    else:
+        m["can_hold"] = np.asarray(hold_mask(m1["mod"].to_numpy(), m1["weekday"].to_numpy()))
     m["ny_date"] = m1["ny_date"].to_numpy()
     return Frame(df, a, m)

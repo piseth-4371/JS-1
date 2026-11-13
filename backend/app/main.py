@@ -21,20 +21,25 @@ from app.repository import init_db, load_bars
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
-    task = None
+    tasks = []
     s = get_settings()
     if s.engine_enabled:
         from app.core.engine import TradingEngine
-        from app.core.live_loop import run_forever
+        from app.core.live_loop import _btc_history, _pull_btc, run_forever
+        from app.core.markets import BTCUSD
+        from app.core.sources import binance_source as bn
 
         engine = TradingEngine(s.engine_source, s.mt5_symbol, s.starting_balance)
-        task = asyncio.create_task(run_forever(engine))
+        tasks.append(asyncio.create_task(run_forever(engine)))
+        if s.btc_weekend_enabled:
+            btc = TradingEngine(bn.SOURCE, bn.SYMBOL, s.starting_balance, market=BTCUSD)
+            tasks.append(asyncio.create_task(run_forever(btc, _pull_btc, _btc_history)))
     yield
-    if task:
+    for task in tasks:
         task.cancel()
 
 
-app = FastAPI(title="NAS100 AI Trading Control Center", version="0.4.0", lifespan=lifespan)
+app = FastAPI(title="NAS100 AI Trading Control Center", version="0.5.0", lifespan=lifespan)
 app.include_router(trading_router)
 app.include_router(market_router)
 

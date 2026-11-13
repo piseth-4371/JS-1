@@ -12,6 +12,8 @@ from dataclasses import dataclass
 class Costs:
     spread: float = 1.5     # index points per round trip [assumption: typical USTEC CFD spread]
     slippage: float = 0.5   # extra points on market/stop fills
+    fee_pct: float = 0.0    # round-trip fee as % of the entry price (crypto)
+    slip_pct: float = 0.0   # extra slippage as % of price on each market/stop leg (crypto)
 
 
 def try_fill(kind: str, side: int, entry: float, o: float, h: float, l: float) -> float | None:  # noqa: E741
@@ -58,10 +60,11 @@ def check_exit(side: int, stop: float, target: float, o: float, h: float, l: flo
 
 
 def net_points(side: int, entry: float, exit_price: float, entry_kind: str, exit_reason: str, costs: Costs) -> float:
-    """Profit in index points after spread and slippage."""
-    pts = (exit_price - entry) * side - costs.spread
+    """Profit in price points after spread, fees and slippage."""
+    pts = (exit_price - entry) * side - costs.spread - entry * costs.fee_pct / 100
+    slip = costs.slippage + entry * costs.slip_pct / 100
     if entry_kind in ("market", "stop"):
-        pts -= costs.slippage
+        pts -= slip
     if exit_reason in ("stop", "session_end", "kill_switch"):
-        pts -= costs.slippage
+        pts -= slip
     return pts

@@ -15,7 +15,7 @@ function Row({ k, v }) {
   );
 }
 
-export default function SignalPanel({ signal, market, ov }) {
+export default function SignalPanel({ signal, market, ov, strategy }) {
   const action = signal?.action ?? "WAIT";
   const rr = signal?.entry != null && signal?.stop != null && signal?.target != null
     ? Math.abs(signal.target - signal.entry) / Math.abs(signal.entry - signal.stop) : null;
@@ -24,7 +24,7 @@ export default function SignalPanel({ signal, market, ov }) {
     <div className="flex flex-col gap-3">
       <div className="card">
         <div className="flex items-center justify-between">
-          <div className="label">Latest signal · {ov?.active_strategy}</div>
+          <div className="label">Latest signal · {strategy ?? ov?.active_strategy}</div>
           <span className={`rounded-md px-3 py-1 text-sm font-bold ring-1 ${ACTION_STYLE[action]}`}>{action}</span>
         </div>
         {signal ? (
@@ -53,7 +53,13 @@ export default function SignalPanel({ signal, market, ov }) {
             </div>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-slate-400">No signals recorded yet. Start the engine with ENGINE_ENABLED=true.</p>
+          <p className="mt-3 text-sm text-slate-400">
+            {!ov?.engine_enabled
+              ? "No signals recorded yet. Start the engine with ENGINE_ENABLED=true."
+              : strategy?.startsWith("btc_")
+                ? "No BTC signals yet: the BTC book only trades on weekends (Fri 17:00 - Sun 17:00 NY)."
+                : "No signals yet for this strategy: NAS100 trades weekdays (entries in the strategy's session window)."}
+          </p>
         )}
       </div>
 

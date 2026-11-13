@@ -19,8 +19,9 @@ from app.core import state
 from app.core.features import build_frame, load_m1
 from app.core.fills import Costs
 from app.core.market_data import Bar, validate_bars
-from app.core.paper_broker import PaperBroker, can_hold
-from app.core.risk import USTEC, Instrument, OrderRequest, RiskSettings, evaluate
+from app.core.markets import NAS100, Market
+from app.core.paper_broker import PaperBroker
+from app.core.risk import Instrument, OrderRequest, RiskSettings, evaluate
 from app.core.strategies import ALL
 from app.db import get_engine
 from app.models import SignalRow
@@ -38,17 +39,20 @@ class CycleResult:
 
 
 class TradingEngine:
-    def __init__(self, source: str, symbol: str, starting_balance: float, instrument: Instrument = USTEC,
-                 settings: RiskSettings | None = None, costs: Costs | None = None):
-        self.source, self.symbol = source, symbol
-        self.inst, self.balance = instrument, starting_balance
-        self.settings, self.costs = settings or RiskSettings(), costs or Costs()
+    def __init__(self, source: str, symbol: str, starting_balance: float, instrument: Instrument | None = None,
+                 settings: RiskSettings | None = None, costs: Costs | None = None, market: Market = NAS100):
+        self.source, self.symbol, self.market = source, symbol, market
+        self.inst, self.balance = instrument or market.instrument, starting_balance
+        self.settings, self.costs = settings or RiskSettings(), costs or market.costs
+
+    def _broker(self, s: Session) -> PaperBroker:
+        return PaperBroker(s, self.inst, self.balance, self.costs, market=self.market)
 
     def startup(self, now_ts: int | None = None) -> list[str]:
         now_ts = now_ts or int(time.time())
         with Session(get_engine()) as s, s.begin():
-            fixes = PaperBroker(s, self.inst, self.balance, self.costs).reconcile(now_ts)
-            state.log(s, "INFO", "engine_start", f"Engine started (paper only). Repairs: {fixes or 'none'}", now_ts)
+            fixes = self._broker(s).reconcile(now_ts)
+            state.log(s, "INFO", "engine_start", f"{self.market.label} engine started (paper only). Repairs: {fixes or 'none'}", now_ts)
             return fixes
 
     def cycle(self, now_ts: int | None = None) -> CycleResult:
@@ -58,7 +62,8 @@ class TradingEngine:
 
     # ------------------------------------------------------------------
     def _cycle(self, s: Session, now: int) -> CycleResult:
-        broker = PaperBroker(s, self.inst, self.balance, self.costs)
+        broker = self._broker(s)
+        mk = self.market
 
         m1 = load_m1(self.source, self.symbol, now - HISTORY_DAYS * 86400, now - 59)
         m1 = m1[m1["ts"] + 60 <= now]                     # closed minutes only
@@ -72,14 +77,14 @@ class TradingEngine:
 
         last = bars[-1]
         if now - (last.ts + 60) > STALE_AFTER:
-            if can_hold(now):
-                state.log(s, "WARN", "stale_data", f"Newest bar closed {(now - last.ts - 60) // 60} min ago", now)
+            if mk.can_hold(now):
+                state.log(s, "WARN", "stale_data", f"{mk.label}: newest bar closed {(now - last.ts - 60) // 60} min ago", now)
             return CycleResult("WAIT", "data is stale (market closed or feed stopped)")
 
         # 1. Broker: process new closed minutes (fills, stops, targets, session end)
-        cursor = int(state.get(s, "broker_cursor_ts"))
+        cursor = int(state.get(s, mk.cursor_key))
         if cursor == 0:
-            state.put(s, "broker_cursor_ts", last.ts)     # first run: start from now, not from history
+            state.put(s, mk.cursor_key, last.ts)     # first run: start from now, not from history
             cursor = last.ts
         for b in bars:
             if b.ts > cursor:                             # only minutes not processed yet
@@ -90,13 +95,19 @@ class TradingEngine:
             broker.kill(last.close, now)
             return CycleResult("KILLED", "kill switch is ON - nothing will trade")
 
+        # This book only trades inside its own holding window (NAS100 weekdays, BTC weekends).
+        if not mk.can_hold(now):
+            return CycleResult("WAIT", f"{mk.label}: outside this book's trading hours")
+
         # 3. Strategy on the newest CLOSED 5m bar.
         # Cheap check first: if the newest finished 5m bar was already evaluated, skip the heavy work.
-        name = state.get(s, "active_strategy")
+        name = state.get(s, mk.strategy_key)
+        if name not in ALL or not mk.owns(name):
+            name = mk.default_strategy
         newest_close = (last.ts + 60) // 300 * 300
         if s.scalar(select(SignalRow.id).where(SignalRow.strategy == name, SignalRow.bar_close_ts == newest_close)):
             return CycleResult("WAIT", "this 5m bar was already evaluated")
-        f = build_frame(m1)
+        f = build_frame(m1, hold_mask=mk.hold_mask)
         if f.df5.empty:
             return CycleResult("WAIT", "not enough data for 5m bars")
         a = f.a

@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     # Background engine (reads MT5 demo bars every 20 s). Off unless turned on in .env.
     engine_enabled: bool = False
     engine_source: str = "mt5:MetaQuotes-Demo"
+    # Weekend BTC book (Binance public data, paper only). Runs with the engine.
+    btc_weekend_enabled: bool = True
 
     # Only "paper" is allowed. There is no live trading in this codebase.
     trading_mode: Literal["paper"] = "paper"

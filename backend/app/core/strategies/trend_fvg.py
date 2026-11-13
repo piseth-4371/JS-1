@@ -15,8 +15,11 @@ class TrendFVG(Strategy):
     name = "trend_fvg"
     clock, start, end, vwap_key = "mod", 9 * 60 + 45, 11 * 60 + 30, "vwap"   # NY 09:45-11:30, NY VWAP
 
+    def in_window(self, i, a) -> bool:
+        return window(a, i, self.start, self.end, self.clock)
+
     def on_bar(self, i, a):
-        if not window(a, i, self.start, self.end, self.clock):
+        if not self.in_window(i, a):
             return None
         c, atr = a["c"][i], a["atr"][i]
         e20, e50, c15, vwap = a["ema20_15"][i], a["ema50_15"][i], a["close_15"][i], a[self.vwap_key][i]
@@ -51,3 +54,16 @@ class LondonTrendFVG(TrendFVG):
     """Same rules, London session: bars closing 08:15-10:00 London time, London VWAP (from 08:00 London)."""
     name = "london_trend_fvg"
     clock, start, end, vwap_key = "lmod", 8 * 60 + 15, 10 * 60, "lvwap"
+
+
+class BTCWeekendTrendFVG(TrendFVG):
+    """BTCUSDT weekend book (Binance data). Same trend + FVG rules on 5m/15m bars, but:
+    - entries only on weekends: bars closing Fri 17:00 NY .. Sun 15:30 NY (flat at Sun 17:00)
+    - VWAP = UTC-day VWAP (crypto trades 24/7; there is no cash session)
+    """
+    name = "btc_weekend_trend_fvg"
+    vwap_key = "dvwap"
+
+    def in_window(self, i, a) -> bool:
+        wd, close_min = a["weekday"][i], a["mod"][i] + 5
+        return (wd == 4 and close_min >= 17 * 60) or wd == 5 or (wd == 6 and close_min <= 15 * 60 + 30)

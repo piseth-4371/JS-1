@@ -35,3 +35,13 @@ cd backend
 $env:ENGINE_ENABLED = "true"
 .\.venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
+
+## Weekend BTC book (paper)
+
+NAS100 trades on weekdays; on weekends (Fri 17:00 - Sun 17:00 New York) the engine trades BTCUSDT on paper, using free Binance public data (no account needed). Same $1,000 paper account, same risk rules, same kill switch.
+
+```powershell
+cd backend
+.\.venv\Scripts\python scripts\backfill.py binance --start 2019-01-01   # BTC history for backtests
+.\.venv\Scripts\python scripts\run_backtest.py --market btc            # BTC backtest (dev + validation)
+```

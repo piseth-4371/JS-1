@@ -7,6 +7,9 @@ Examples (from the backend folder):
   # Dukascopy history for backtesting (one file per day; takes a while)
   .\\.venv\\Scripts\\python scripts\\backfill.py dukascopy --start 2026-10-01 --end 2026-11-13
 
+  # Bitcoin (BTCUSDT) from Binance public data, for the weekend book (fast, no account)
+  .\\.venv\\Scripts\\python scripts\\backfill.py binance --start 2019-01-01
+
 Running the same command twice is safe: duplicates are skipped.
 """
 import argparse
@@ -23,7 +26,7 @@ from app.repository import count_bars, days_present, init_db, save_bars  # noqa:
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("source", choices=["mt5", "dukascopy"])
+    p.add_argument("source", choices=["mt5", "dukascopy", "binance"])
     p.add_argument("--days", type=int, default=30, help="MT5: how many days back")
     p.add_argument("--start", type=date.fromisoformat, help="Dukascopy: first day (YYYY-MM-DD)")
     p.add_argument("--end", type=date.fromisoformat, help="Dukascopy: day after the last day")
@@ -44,6 +47,40 @@ def main() -> int:
             print("ERROR:", e)
             return 1
         symbol = settings.mt5_symbol
+    elif a.source == "binance":
+        from app.core.sources import binance_source as bn
+
+        if not a.start:
+            print("ERROR: --start is required for binance")
+            return 1
+        source, symbol = bn.SOURCE, bn.SYMBOL
+        have = days_present(source, symbol)
+        day = a.start
+        end_day = a.end or date.today() + timedelta(days=1)
+        while day < end_day:
+            chunk_end = min(day + timedelta(days=7), end_day)
+            days = [(day + timedelta(days=k) - date(1970, 1, 1)).days for k in range((chunk_end - day).days)]
+            if all(d in have for d in days) and chunk_end < date.today():
+                day = chunk_end
+                continue
+            s0 = datetime(day.year, day.month, day.day, tzinfo=timezone.utc)
+            s1 = datetime(chunk_end.year, chunk_end.month, chunk_end.day, tzinfo=timezone.utc)
+            try:
+                week = bn.fetch_m1(s0, min(s1, datetime.now(timezone.utc)))
+            except bn.BinanceError as e:
+                print("ERROR:", e, "- progress is saved; run the same command again later.")
+                return 1
+            report = validate_bars(week)
+            if not report.ok:
+                print(f"  {day}  validation failed, NOT saved: {report.errors[:3]}")
+            else:
+                save_bars(week)
+                print(f"  {day} .. {chunk_end}  {len(week):>6} bars saved", flush=True)
+            day = chunk_end
+        n, first, last = count_bars(source, symbol)
+        fmt = lambda ts: datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d %H:%M UTC") if ts else "-"  # noqa: E731
+        print(f"Database now has {n} {symbol} M1 bars from {source}: {fmt(first)} -> {fmt(last)}")
+        return 0
     else:
         from app.core.sources import dukascopy_source as dk
 

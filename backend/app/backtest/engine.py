@@ -165,7 +165,7 @@ def run(strategy: Strategy, f: Frame, settings: RiskSettings | None = None, cost
     return res
 
 
-def min_account_for(trade: Trade, settings: RiskSettings | None = None) -> float:
-    """Smallest balance where USTEC's minimum lot fits this trade's stop within the risk %."""
+def min_account_for(trade: Trade, settings: RiskSettings | None = None, inst=USTEC) -> float:
+    """Smallest balance where the instrument's minimum lot fits this trade's stop within the risk %."""
     settings = settings or RiskSettings()
-    return USTEC.min_lot * trade.risk_pts * USTEC.value_per_point_per_lot / (settings.risk_pct / 100)
+    return inst.min_lot * trade.risk_pts * inst.value_per_point_per_lot / (settings.risk_pct / 100)

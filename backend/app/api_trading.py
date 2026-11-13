@@ -14,8 +14,10 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.core import state
+from app.core.markets import BTCUSD, MARKETS, NAS100, Market, market_for_strategy
 from app.core.paper_broker import PaperBroker
-from app.core.risk import USTEC, RiskSettings
+from app.core.risk import RiskSettings
+from app.core.sources import binance_source as bn
 from app.core.strategies import ALL
 from app.db import get_engine
 from app.models import BarRow, EventRow, OrderRow, PositionRow, SignalRow
@@ -23,8 +25,18 @@ from app.models import BarRow, EventRow, OrderRow, PositionRow, SignalRow
 router = APIRouter(prefix="/api")
 
 
-def _broker(s: Session) -> PaperBroker:
-    return PaperBroker(s, USTEC, get_settings().starting_balance)
+def _broker(s: Session, market: Market = NAS100) -> PaperBroker:
+    return PaperBroker(s, market.instrument, get_settings().starting_balance, market.costs, market=market)
+
+
+def _feed(market: Market) -> tuple[str, str]:
+    st = get_settings()
+    return (bn.SOURCE, bn.SYMBOL) if market is BTCUSD else (st.engine_source, st.mt5_symbol)
+
+
+def _last_bar(s: Session, market: Market):
+    src, sym = _feed(market)
+    return s.scalar(select(BarRow).where(BarRow.source == src, BarRow.symbol == sym).order_by(desc(BarRow.ts)).limit(1))
 
 
 def _row(r) -> dict:
@@ -38,8 +50,17 @@ def overview() -> dict:
     with Session(get_engine()) as s:
         b = _broker(s)
         acct = b.account_state(now)
-        last_bar = s.scalar(select(BarRow).where(BarRow.source == st.engine_source).order_by(desc(BarRow.ts)).limit(1))
+        last_bar = _last_bar(s, NAS100)
         rs = RiskSettings()
+        books = []
+        for m in MARKETS.values():
+            lb = _last_bar(s, m)
+            books.append({"key": m.key, "label": m.label, "symbol": _feed(m)[1], "source": _feed(m)[0],
+                          "open_now": m.can_hold(now), "last_bar_ts": lb.ts if lb else None,
+                          "last_price": lb.close if lb else None,
+                          "stale": (now - lb.ts - 60 > 120) if lb else True,
+                          "active_strategy": state.get(s, m.strategy_key),
+                          "enabled": m is NAS100 or st.btc_weekend_enabled})
         return {
             "mode": "PAPER",
             "live_trading_available": False,
@@ -53,8 +74,8 @@ def overview() -> dict:
             "trades_today": acct.trades_today,
             "max_trades_per_day": rs.max_trades_per_day,
             "consecutive_losses_today": acct.consecutive_losses,
-            "open_positions": [_row(p) for p in b.open_positions()],
-            "pending_orders": [_row(o) for o in b.pending_orders()],
+            "open_positions": [_row(p) for p in b.all_open_positions()],
+            "pending_orders": [_row(o) for o in b.all_pending_orders()],
             "kill_switch": acct.kill_switch,
             "auto_trading": state.get_bool(s, "auto_trading"),
             "active_strategy": state.get(s, "active_strategy"),
@@ -62,6 +83,8 @@ def overview() -> dict:
             "data_source": st.engine_source,
             "last_bar_ts": last_bar.ts if last_bar else None,
             "risk_settings": rs.__dict__,
+            "markets": books,
+            "trading_now": next((x["key"] for x in books if x["open_now"] and x["enabled"]), None),
         }
 
 
@@ -114,8 +137,9 @@ def kill() -> dict:
     with Session(get_engine()) as s, s.begin():
         state.put(s, "kill_switch", True)
         state.put(s, "auto_trading", False)
-        last = s.scalar(select(BarRow).where(BarRow.source == st.engine_source).order_by(desc(BarRow.ts)).limit(1))
-        _broker(s).kill(last.close if last else None, now)
+        for m in MARKETS.values():                   # each book is closed at its OWN last price
+            last = _last_bar(s, m)
+            _broker(s, m).kill(last.close if last else None, now)
         state.log(s, "WARN", "kill_switch", "KILL SWITCH activated by user", now)
     return {"kill_switch": True, "auto_trading": False}
 
@@ -133,9 +157,10 @@ def set_strategy(body: StrategyChoice) -> dict:
     if body.name not in ALL:
         raise HTTPException(400, f"Unknown strategy. Choose one of {list(ALL)}")
     with Session(get_engine()) as s, s.begin():
-        state.put(s, "active_strategy", body.name)
-        state.log(s, "INFO", "control", f"Active strategy set to {body.name}")
-    return {"active_strategy": body.name}
+        m = market_for_strategy(body.name)
+        state.put(s, m.strategy_key, body.name)
+        state.log(s, "INFO", "control", f"{m.label}: active strategy set to {body.name}")
+    return {"active_strategy": body.name, "market": m.key}
 
 
 @router.get("/journal/metrics")

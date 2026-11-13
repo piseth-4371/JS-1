@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getJSON } from "./api.js";
 import Chart from "./components/Chart.jsx";
 import Header from "./components/Header.jsx";
@@ -7,6 +7,10 @@ import Overview from "./components/Overview.jsx";
 import SignalPanel from "./components/SignalPanel.jsx";
 
 const POLL_MS = 5000; // refresh every 5 seconds
+const FEEDS = {
+  nas100: "/api/market/analysis?hours=12",
+  btc: "/api/market/analysis?hours=12&source=binance&symbol=BTCUSDT",
+};
 
 export default function App() {
   const [ov, setOv] = useState(null);
@@ -18,12 +22,16 @@ export default function App() {
   const [metrics, setMetrics] = useState(null);
   const [error, setError] = useState(null);
   const [backendDown, setBackendDown] = useState(false);
+  const [book, setBook] = useState(null); // null = follow the book that is trading now
+  const view = book ?? ov?.trading_now ?? "nas100";
+  const viewRef = useRef(view);
+  viewRef.current = view;
 
   const refresh = useCallback(async () => {
     try {
       const [o, m, s, ord, p, e, mt] = await Promise.all([
         getJSON("/api/overview"),
-        getJSON("/api/market/analysis?hours=12"),
+        getJSON(FEEDS[viewRef.current]),
         getJSON("/api/signals?limit=100"),
         getJSON("/api/orders?limit=100"),
         getJSON("/api/positions?limit=200"),
@@ -43,11 +51,16 @@ export default function App() {
     return () => clearInterval(t);
   }, [refresh]);
 
-  const latest = signals.find((s) => s.strategy === ov?.active_strategy);
+  useEffect(() => { refresh(); }, [view, refresh]);
+
+  const bookInfo = ov?.markets?.find((m) => m.key === view);
+  const strategy = bookInfo?.active_strategy ?? ov?.active_strategy;
+  const latest = signals.find((s) => s.strategy === strategy);
 
   return (
     <div className="min-h-screen">
-      <Header ov={ov} market={market} refresh={refresh} setError={setError} />
+      <Header ov={ov} market={market} refresh={refresh} setError={setError}
+        view={view} book={book} setBook={setBook} bookInfo={bookInfo} />
       <main className="mx-auto flex max-w-[1600px] flex-col gap-4 p-4">
         {backendDown && (
           <div className="rounded-lg bg-red-600/20 p-3 text-red-200 ring-1 ring-red-500/40">
@@ -66,11 +79,11 @@ export default function App() {
         <Overview ov={ov} />
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2"><Chart market={market} /></div>
-          <SignalPanel signal={latest} market={market} ov={ov} />
+          <SignalPanel signal={latest} market={market} ov={ov} strategy={strategy} />
         </div>
         <Journal positions={positions} orders={orders} signals={signals} events={events} metrics={metrics} />
         <footer className="pb-4 text-center text-xs text-slate-500">
-          Paper trading only · simulated orders and fills · prices from {ov?.data_source ?? "-"} · times shown in New York time
+          Paper trading only · simulated orders and fills · prices from {bookInfo?.source ?? ov?.data_source ?? "-"} · NAS100 trades weekdays, BTC weekends · times shown in New York time
         </footer>
       </main>
     </div>
