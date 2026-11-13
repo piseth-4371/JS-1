@@ -29,14 +29,29 @@ def ny(y, mo, d, h, m):
 def test_calendar_file_is_complete_and_sourced():
     with news.CALENDAR.open(encoding="utf-8") as fh:
         rows = list(csv.DictReader(fh))
-    assert all(r["source"].startswith("https://www.bls.gov/") or r["source"].startswith("https://www.federalreserve.gov/")
-               for r in rows)
+    official = ("https://www.bls.gov/", "https://www.federalreserve.gov/", "https://www.bea.gov/",
+                "https://apps.bea.gov/")
+    assert all(r["source"].startswith(official) for r in rows)
+    assert {r["event"] for r in rows} == set(news.EVENTS)
     assert len({(r["date"], r["event"]) for r in rows}) == len(rows)          # no duplicates
     per_year = Counter((r["date"][:4], r["event"]) for r in rows)
     for y in range(2019, 2027):
         assert per_year[(str(y), "FOMC")] >= 8, y
         expected_bls = 11 if y == 2025 else 12           # Oct 2025 reports never published (shutdown)
         assert per_year[(str(y), "CPI")] == expected_bls and per_year[(str(y), "NFP")] == expected_bls, y
+        # BEA: ~12 a year; shutdowns (Dec 2018-Jan 2019, Oct-Nov 2025) merged or moved some releases
+        assert 10 <= per_year[(str(y), "GDP")] <= 13 and 11 <= per_year[(str(y), "PCE")] <= 13, y
+
+
+def test_bea_events_and_10am_exceptions():
+    labels = {e.label for e in news.load_events()}
+    assert "GDP 2024-01-25 08:30 ET" in labels                      # Q4 2023 advance estimate
+    assert "PCE 2019-03-29 08:30 ET" in labels                      # shutdown catch-up release
+    assert "PCE 2024-11-27 10:00 ET" in labels and "PCE 2026-01-22 10:00 ET" in labels
+    assert "GDP 2026-11-25 08:30 ET" in labels and "PCE 2026-12-23 08:30 ET" in labels   # scheduled
+    # a 10:00 release blocks a 09:45 entry; the 08:30 window has ended by 09:01
+    assert news.entry_block_reason(ny(2024, 11, 27, 9, 45)).startswith("High-impact news blackout: PCE")
+    assert news.blackout_event(ny(2024, 1, 25, 9, 1)) is None
 
 
 def test_known_events_and_times():

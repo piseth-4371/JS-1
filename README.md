@@ -45,3 +45,12 @@ cd backend
 .\.venv\Scripts\python scripts\backfill.py binance --start 2019-01-01   # BTC history for backtests
 .\.venv\Scripts\python scripts\run_backtest.py --market btc            # BTC backtest (dev + validation)
 ```
+
+## Daily routine (PowerShell)
+One click: from this folder run `.\start.ps1` (backs up the database, then opens the backend and the dashboard).
+Paper trading only; the MT5 terminal must be open for NAS100 prices.
+
+In `backend\`:
+- `.\.venv\Scripts\python scripts\daily_report.py` - yesterday's report (New York date): news, signals, risk decisions, orders, trades. Saved in `data\reports\`.
+- `.\.venv\Scripts\python scripts\backup_db.py` - copy of the database into `data\backups\` (newest 7 kept). Restore: stop the server, copy a backup over `data\app.db`.
+- `.\.venv\Scripts\python scripts\robustness.py --market nas100` (or `btc`) - stress test (double costs, other targets, bootstrap, Monte Carlo) on development + validation data only.

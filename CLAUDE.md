@@ -18,7 +18,7 @@ Times America/New_York. Closed bars only.
 - Entries 09:45–11:30 only; flat by 15:55.
 - 5m FVG: c3.low > c1.high (bull), c2 body ≥ 1.0×ATR14, gap ≥ 0.15×ATR14, close on bias side of session VWAP.
 - Entry limit at FVG midpoint, expires after 6 bars. SL = c1.low − 0.10×ATR; stop distance must be 0.5–2.0×ATR.
-- TP fixed 2.0R. Avoid ±30 min of high-impact US news (implemented in `core/news.py` for CPI/NFP/FOMC; calendar `app/calendar/us_high_impact_events.csv`, valid to 2026-12-31 — extend it from BLS/Fed sources before 2027), extreme ATR, stale/gappy data.
+- TP fixed 2.0R. Avoid ±30 min of high-impact US news (implemented in `core/news.py` for CPI/NFP/FOMC/GDP/PCE; calendar `app/calendar/us_high_impact_events.csv`, valid to 2026-12-31 — extend it from BLS/Fed/BEA sources before 2027), extreme ATR, stale/gappy data.
 
 ## 4. Risk restrictions (NEVER raise without explicit owner approval)
 - Virtual balance: **$1,000 paper** (owner approved 2026-11-13, was $10). Virtual money only; risk % limits unchanged.
@@ -76,6 +76,7 @@ nas100-control-center/
 - [x] Weekend BTC book (owner approved 2026-11-13, Binance public data): `core/markets.py` (NAS100 + BTCUSD books, holding windows, costs), `sources/binance_source.py`, `backfill.py binance`, BTC loop in `live_loop.py`, broker scoped per book (shared account), `btc_weekend_trend_fvg`, `run_backtest.py --market btc`, dashboard NAS100/BTC toggle + 'Trading now'. 105 tests pass.
 - [x] Auto-switch research: `app/backtest/selector.py` + `scripts/run_selector.py` (weekly walk-forward, no look-ahead, 5 tests). 2019 result: worse than fixed strategies; not enabled. 110 tests pass.
 - [x] News blackout (2026-11-13): 255 sourced events 2019-2026, enforced in backtester + engine + broker, dashboard badge. 118 tests pass.
+- [x] Robustness tool (`scripts/robustness.py`), daily paper report (`scripts/daily_report.py`), DB backup (`scripts/backup_db.py`), `start.ps1`, BEA GDP + PCE in the news calendar (444 events). 127 tests pass.
 - [ ] Next: finish download → run backtest → review → choose strategy (see docs/review_day7.md §5–6)
 - Data facts: MT5 times = server time (Europe/Athens for MetaQuotes-Demo). Dukascopy month in URL is 0-based, price ÷1000.
 

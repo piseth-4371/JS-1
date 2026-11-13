@@ -7,7 +7,11 @@ Calendar: app/calendar/us_high_impact_events.csv - every row has its official so
   (2025 government shutdown), so they are correctly absent.
 - FOMC: meeting dates from federalreserve.gov calendars; each past statement time was read
   from its press release ("For release at ..."), incl. the 2020 emergency statements.
-NOT included yet (known gap): PCE, GDP and other BEA releases.
+- GDP and PCE (BEA "Personal Income and Outlays"): past releases from the BEA news archive
+  (bea.gov/news/archive, each page's published time, mostly 08:30; some PCE at 10:00 ET);
+  releases not yet archived from BEA's schedule file apps.bea.gov/API/signup/release_dates.json
+  (both fetched 2026-11-13). Two posting-jitter times (08:29:59, 08:31) were set to the 08:30 schedule.
+Not included: PPI, retail sales, jobless claims, ISM and other medium-impact releases.
 
 Rules (the same in the backtester and the live engine):
 - No NEW entry when the signal bar closes within ±30 min of an event.
@@ -30,7 +34,7 @@ NY = ZoneInfo("America/New_York")
 CALENDAR = Path(__file__).resolve().parent.parent / "calendar" / "us_high_impact_events.csv"
 COVERED_FROM, COVERED_UNTIL = date(2019, 1, 1), date(2027, 1, 1)   # until = exclusive
 WINDOW = 30 * 60                                                    # seconds before and after
-EVENTS = ("CPI", "NFP", "FOMC")
+EVENTS = ("CPI", "NFP", "FOMC", "GDP", "PCE")
 
 
 @dataclass(frozen=True)
