@@ -26,3 +26,4 @@
 | 2026-11-13 | Engine only processes new minutes and skips the feature rebuild when the newest 5m bar was already evaluated | ~40k DB queries per cycle before; replay >10 min → ~2.5 min |
 | 2026-11-13 | Claude Code: CLAUDE.md + skills risk-audit, backtest-review, teach-step + PreToolUse hook blocking .env edits and `order_send(` | Enforced by the harness, not memory |
 | 2026-11-13 | Live-trading gates written in docs/review_day7.md §5 | Profit over 7 days is never enough |
+| 2026-11-13 | Paper balance $10 → $1,000 (owner approved). `STARTING_BALANCE` default 1000; risk % limits unchanged | At $10 the 0.1 min lot made every trade exceed 0.5% risk, so nothing could be tested |

@@ -20,11 +20,11 @@ Times America/New_York. Closed bars only.
 - TP fixed 2.0R. Avoid ±30 min of high-impact US news, extreme ATR, stale/gappy data.
 
 ## 4. Risk restrictions (NEVER raise without explicit owner approval)
-- Virtual balance: **$10** (owner's choice, mirrors their 1000 USC cent account).
+- Virtual balance: **$1,000 paper** (owner approved 2026-11-13, was $10). Virtual money only; risk % limits unchanged.
 - Risk/trade 0.5% default, 1% hard ceiling in code. Daily loss −2%, weekly −5% → lock.
 - Max 3 trades/day, 1 open position, stop after 2 consecutive losses that day.
 - Mandatory stop-loss. No martingale, grid, averaging down, or leverage beyond equity/price cap.
-- If broker minimum lot × stop distance > allowed risk → **REJECT** (expected to reject most USTEC trades at $10).
+- If broker minimum lot × stop distance > allowed risk → **REJECT** (at $10 this rejected every USTEC trade; at $1,000 most fit).
 - Risk Manager is deterministic Python with absolute veto. No LLM in the trading loop.
 - **Live trading does not exist in this codebase.** Do not add a live order path.
 
@@ -63,6 +63,7 @@ nas100-control-center/
 - [x] Day 0: research & plan approved (2026-11-13), revision 2: Exness MT5 demo, $10 kept, SQLite.
 - [x] Day 1: setup, health endpoint, MT5 USTEC check (MetaQuotes-Demo: min lot 0.1 = $0.10/pt; ~30 days M1 history)
 - Owner decision: keep $10 → Risk Manager will reject all USTEC trades; system logs signals + rejections only. Do not raise limits.
+- Owner decision 2026-11-13: paper balance raised to $1,000 (STARTING_BALANCE) so trades fit the 0.1 min lot. Risk % limits unchanged. Real account is still 1000 USC = $10: this is NOT a reason to trade it live.
 - [x] Day 2: market data. `app/core/market_data.py` (Bar, validate, coverage, stale, resample), MT5 + Dukascopy sources, `bars` table, `scripts/backfill.py`, `scripts/compare_sources.py`, `GET /api/market/bars`. 25 tests pass. Stored: MT5 60 days, Dukascopy 2026-10-19..11-12.
 - [x] Day 3 (+ backtester pulled forward from Day 6): `core/indicators.py`, `core/features.py` (causal 5m table), `core/risk.py` (hard limits, full reason list), 5 strategies in `core/strategies/` (trend_fvg, sweep_mss_fvg, orb, vwap_reversion, silver_bullet), `backtest/engine.py` + `metrics.py`, `scripts/run_backtest.py`. 64 tests pass.
 - Backtest splits fixed in advance: dev 2019–2022, validation 2023–2024, OOS 2025+ (run ONCE with --oos). Do not tune on OOS.

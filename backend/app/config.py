@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     # MT5 bar times are in the broker's server time zone (an IANA name).
     # MetaQuotes-Demo: Europe/Athens (UTC+2 winter / UTC+3 summer). Exness: check with check_mt5.py.
     mt5_server_tz: str = "Europe/Athens"
-    starting_balance: float = 10.0
+    starting_balance: float = 1000.0
 
     # Background engine (reads MT5 demo bars every 20 s). Off unless turned on in .env.
     engine_enabled: bool = False
