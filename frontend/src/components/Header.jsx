@@ -1,10 +1,20 @@
 import { useState } from "react";
 import { nyTime, postJSON } from "../api.js";
+import { STRATEGIES, strategyLabel } from "../strategies.js";
 
-const STRATEGIES = ["trend_fvg", "sweep_mss_fvg", "orb", "vwap_reversion", "silver_bullet",
-  "london_trend_fvg", "london_sweep_mss_fvg", "btc_weekend_trend_fvg"];
+// Small status item for the second header row: coloured dot + text, tooltip explains it.
+function Status({ tone = "muted", title, children }) {
+  const dot = { ok: "bg-emerald-400", info: "bg-sky-400", warn: "bg-amber-400", bad: "bg-red-500", muted: "bg-slate-500" }[tone];
+  const text = { ok: "text-slate-200", info: "text-slate-200", warn: "text-amber-200", bad: "font-semibold text-red-200", muted: "text-slate-400" }[tone];
+  return (
+    <span className={`inline-flex shrink-0 items-center gap-1.5 ${text}`} title={title}>
+      <span className={`h-2 w-2 rounded-full ${dot}`} />
+      {children}
+    </span>
+  );
+}
 
-export default function Header({ ov, market, refresh, setError, view, book, setBook, bookInfo }) {
+export default function Header({ ov, market, preview, marketError, previewError, refresh, setError, view, book, setBook, bookInfo }) {
   const [busy, setBusy] = useState(false);
 
   const act = async (fn) => {
@@ -26,111 +36,112 @@ export default function Header({ ov, market, refresh, setError, view, book, setB
     }
   };
 
-  const stale = !market?.available || market?.stale;
+  const shownMarket = market?.view === view ? market : null;
+  const loadingMarket = !shownMarket && !marketError;
+  const stale = !shownMarket?.available || shownMarket?.stale || !!marketError;
+  const quoteStatus = previewError ? "offline"
+    : preview?.view === view && preview?.available ? (preview.stale ? "stale" : "live (display only)") : "unavailable";
+  const news = ov?.news;
 
   return (
-    <header className="flex flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-900/80 px-4 py-3">
-      <h1 className="mr-2 text-lg font-semibold">LITTLE</h1>
-
-      <span className="rounded-md bg-emerald-600/20 px-2 py-1 text-xs font-bold text-emerald-300 ring-1 ring-emerald-500/40">
-        PAPER TRADING
-      </span>
-      <span
-        title="Live trading does not exist in this version"
-        className="cursor-not-allowed rounded-md bg-slate-800 px-2 py-1 text-xs text-slate-500 ring-1 ring-slate-700"
-      >
-        🔒 LIVE: not available in V1
-      </span>
-
-      <span
-        className={`rounded-md px-2 py-1 text-xs ring-1 ${
-          stale ? "bg-amber-500/15 text-amber-300 ring-amber-500/40" : "bg-sky-500/15 text-sky-300 ring-sky-500/40"
-        }`}
-        title="Where the prices come from"
-      >
-        Data: {bookInfo?.source ?? ov?.data_source ?? "-"} {bookInfo?.symbol ?? ""} · last bar {nyTime(market?.last_bar_ts)} NY
-        {stale ? " · STALE / market closed" : " · live"}
-      </span>
-
-      <span className={`text-xs ${ov?.engine_enabled ? "text-sky-300" : "text-slate-500"}`}>
-        Engine: {ov?.engine_enabled ? "running" : "off (set ENGINE_ENABLED=true)"}
-      </span>
-
-      <span
-        className={`rounded-md px-2 py-1 text-xs font-semibold ring-1 ${
-          ov?.trading_now ? "bg-emerald-500/15 text-emerald-300 ring-emerald-500/40" : "bg-slate-800 text-slate-400 ring-slate-700"
-        }`}
-        title="NAS100 trades weekdays 03:00-15:55 NY; BTC trades weekends Fri 17:00 - Sun 17:00 NY"
-      >
-        Trading now: {ov?.trading_now === "btc" ? "BTC (weekend)" : ov?.trading_now === "nas100" ? "NAS100" : "nothing (both closed)"}
-      </span>
-
-      {ov?.news && (
-        <span
-          className={`rounded-md px-2 py-1 text-xs ring-1 ${
-            ov.news.blackout_now || !ov.news.calendar_covers_now
-              ? "bg-red-600/20 font-semibold text-red-200 ring-red-500/50"
-              : "bg-slate-800 text-slate-300 ring-slate-700"
-          }`}
-          title={`High-impact US news (${ov.news.events_included.join(", ")}): no new entries ±30 min. Official sources: BLS, Federal Reserve. Calendar valid until ${ov.news.calendar_until}.`}
-        >
-          {!ov.news.calendar_covers_now
-            ? "NEWS CALENDAR MISSING: no trading"
-            : ov.news.blackout_now
-              ? `NEWS BLACKOUT: ${ov.news.blackout_now}`
-              : ov.news.upcoming.length
-                ? `Next news: ${ov.news.upcoming[0].label}`
-                : "No high-impact news in the next 7 days"}
+    <header className="sticky top-0 z-20 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
+      {/* Row 1: identity, which market, and the controls */}
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-2 px-4 pt-3">
+        <h1 className="text-lg font-semibold tracking-tight">LITTLE</h1>
+        <span className="rounded-md bg-emerald-600/20 px-2 py-0.5 text-xs font-bold text-emerald-300 ring-1 ring-emerald-500/40"
+          title="Simulated orders and fills only. Live trading does not exist in this version.">
+          PAPER ONLY · live off
         </span>
-      )}
 
-      <div className="flex overflow-hidden rounded-md ring-1 ring-slate-700" role="group" aria-label="Which market to show">
-        {(ov?.markets ?? [{ key: "nas100", label: "NAS100" }, { key: "btc", label: "BTC" }]).map((m) => (
-          <button
-            key={m.key}
-            className={`px-2 py-1 text-xs ${view === m.key ? "bg-sky-600 text-white" : "bg-slate-800 text-slate-300"}`}
-            onClick={() => setBook(book === m.key ? null : m.key)}
-            title={m.open_now ? "trading window open now" : "outside its trading window"}
-          >
-            {m.key === "btc" ? "BTC" : "NAS100"}{m.open_now ? " ●" : ""}
-          </button>
-        ))}
-      </div>
+        <div className="flex overflow-hidden rounded-md ring-1 ring-slate-700" role="group" aria-label="Which market to show">
+          {(ov?.markets ?? [{ key: "nas100" }, { key: "btc" }]).map((m) => (
+            <button
+              key={m.key}
+              className={`px-3 py-1 text-xs font-medium ${view === m.key ? "bg-sky-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}
+              onClick={() => setBook(book === m.key ? null : m.key)}
+              title={m.open_now ? "Trading window open now" : "Outside its trading window"}
+              aria-pressed={view === m.key}
+            >
+              {m.key === "btc" ? "BTC" : "NAS100"}
+              {m.open_now && <span className="ml-1 text-emerald-300">●</span>}
+            </button>
+          ))}
+        </div>
 
-      <div className="ml-auto flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-1 text-sm">
-          <span className="label">Strategy</span>
+        <div className="ml-auto flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <select
-            className="rounded-md border border-slate-700 bg-slate-800 px-2 py-1 text-sm"
+            aria-label="Strategy for this market"
+            className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm sm:flex-none"
             value={bookInfo?.active_strategy ?? ov?.active_strategy ?? ""}
             disabled={busy || !ov}
             onChange={(e) => act(() => postJSON("/api/controls/strategy", { name: e.target.value }))}
           >
+            {!ov && <option value="">loading…</option>}
             {STRATEGIES.filter((s) => s.startsWith("btc_") === (view === "btc")).map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>{strategyLabel(s)}</option>
             ))}
           </select>
-        </label>
 
-        <button
-          className={`btn ${ov?.auto_trading ? "bg-sky-600 text-white" : "bg-slate-700 text-slate-200"}`}
-          disabled={busy || !ov || ov.kill_switch}
-          onClick={() => act(() => postJSON("/api/controls/auto-trading", { enabled: !ov.auto_trading }))}
-          title={ov?.kill_switch ? "Reset the kill switch first" : "Auto-trading can never bypass the Risk Manager"}
+          <button
+            className={`btn ${ov?.auto_trading ? "bg-sky-600 text-white" : "bg-slate-700 text-slate-200"}`}
+            disabled={busy || !ov || ov.kill_switch}
+            onClick={() => act(() => postJSON("/api/controls/auto-trading", { enabled: !ov.auto_trading }))}
+            title={ov?.kill_switch ? "Reset the kill switch first" : "Auto-trading can never bypass the Risk Manager"}
+          >
+            Auto: {!ov ? "…" : ov.auto_trading ? "ON" : "OFF"}
+          </button>
+
+          {ov?.kill_switch ? (
+            <button className="btn bg-amber-600 text-white" disabled={busy}
+              onClick={() => act(() => postJSON("/api/controls/reset-kill"))}>
+              Reset kill switch
+            </button>
+          ) : (
+            <button className="btn bg-red-600 font-bold text-white hover:bg-red-500" disabled={busy || !ov} onClick={kill}>
+              ■ KILL
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Row 2: one compact status line (scrolls sideways on a phone instead of filling the screen) */}
+      <div className="mx-auto flex max-w-[1600px] gap-4 overflow-x-auto whitespace-nowrap px-4 py-2 text-xs">
+        <Status
+          tone={loadingMarket ? "muted" : stale ? "warn" : "ok"}
+          title="Where the prices come from and the last completed 1-minute bar"
         >
-          Auto-trading: {ov?.auto_trading ? "ON" : "OFF"}
-        </button>
+          {bookInfo?.source ?? "-"} {bookInfo?.symbol ?? ""} ·{" "}
+          {loadingMarket ? "loading…" : `last bar ${nyTime(shownMarket?.last_bar_ts)} NY${stale ? " · STALE / closed" : ""}`}
+        </Status>
 
-        {ov?.kill_switch ? (
-          <button className="btn bg-amber-600 text-white" disabled={busy}
-            onClick={() => act(() => postJSON("/api/controls/reset-kill"))}>
-            Reset kill switch
-          </button>
-        ) : (
-          <button className="btn bg-red-600 font-bold text-white hover:bg-red-500" disabled={busy || !ov} onClick={kill}>
-            ■ KILL SWITCH
-          </button>
+        <Status tone={!ov ? "muted" : ov.engine_enabled ? "ok" : "warn"} title="The engine checks every closed 5-minute bar">
+          Engine {!ov ? "connecting…" : ov.engine_enabled ? "running" : "off (ENGINE_ENABLED=true)"}
+        </Status>
+
+        <Status tone={ov?.trading_now ? "ok" : "muted"}
+          title="NAS100 holds positions weekdays 03:00-15:55 NY; BTC weekends Fri 17:00 - Sun 17:00 NY">
+          Window: {!ov ? "…" : ov.trading_now === "btc" ? "BTC open" : ov.trading_now === "nas100" ? "NAS100 open" : "both closed"}
+        </Status>
+
+        {news && (
+          <Status
+            tone={news.blackout_now || !news.calendar_covers_now ? "bad" : news.upcoming.length ? "warn" : "muted"}
+            title={`High-impact US news (${news.events_included.join(", ")}): no new entries ±30 min. Sources: BLS, Federal Reserve, BEA. Calendar valid until ${news.calendar_until}.`}
+          >
+            {!news.calendar_covers_now
+              ? "NEWS CALENDAR MISSING: no trading"
+              : news.blackout_now
+                ? `NEWS BLACKOUT: ${news.blackout_now}`
+                : news.upcoming.length
+                  ? `Next news: ${news.upcoming[0].label}`
+                  : "No high-impact news in 7 days"}
+          </Status>
         )}
+
+        <Status tone={quoteStatus.startsWith("live") ? "info" : "muted"}
+          title="The live quote only updates the chart. Trading signals use completed candles.">
+          Quote: {quoteStatus}
+        </Status>
       </div>
     </header>
   );

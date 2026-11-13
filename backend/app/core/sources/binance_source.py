@@ -27,6 +27,32 @@ class BinanceError(Exception):
     pass
 
 
+def current_m5_preview(rows: list, now_ts: int) -> dict:
+    """Use only the current, provisional five-minute kline for display."""
+    base = {"available": False, "source": SOURCE, "symbol": SYMBOL,
+            "candle": None, "observed_ts": now_ts, "stale": True}
+    bucket = now_ts // 300 * 300
+    if not rows or int(rows[0][0]) // 1000 != bucket:
+        return {**base, "message": "No current five-minute candle from Binance."}
+    row = rows[0]
+    return {**base, "available": True, "stale": False,
+            "candle": {"time": bucket, "open": float(row[1]), "high": float(row[2]),
+                       "low": float(row[3]), "close": float(row[4])}}
+
+
+def fetch_current_m5_preview() -> dict:
+    """One bounded public market-data request; no account or trading endpoint."""
+    now_ts = int(time.time())
+    bucket = now_ts // 300 * 300
+    params = f"symbol={SYMBOL}&interval=5m&startTime={bucket * 1000}&endTime={now_ts * 1000}&limit=1"
+    try:
+        with urllib.request.urlopen(f"{URL}?{params}", timeout=5) as resp:
+            rows = json.loads(resp.read())
+        return current_m5_preview(rows, int(time.time()))
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError, TypeError, IndexError) as e:
+        raise BinanceError(f"Binance preview unavailable: {e}") from e
+
+
 def parse_klines(rows: list, now_ms: int, symbol: str = SYMBOL) -> list[Bar]:
     out = []
     for r in rows:

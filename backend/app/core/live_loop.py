@@ -29,7 +29,10 @@ def _pull_bars() -> str:
     s = get_settings()
     end = datetime.now(timezone.utc)
     bars, source = fetch_mt5_m1(s.mt5_symbol, end - timedelta(hours=3), end, s.mt5_server_tz, s.mt5_terminal_path)
-    save_bars(bars)
+    # Refresh the recent closed window as well as inserting new minutes. Older
+    # versions could freeze an unfinished MT5 minute on first sight; upserting
+    # its finalized value repairs those rows while the loop runs.
+    save_bars(bars, update_existing=True)
     return source
 
 

@@ -1,9 +1,15 @@
 // Small helpers to talk to the FastAPI backend (proxied by Vite at /api).
 
-export async function getJSON(path) {
-  const r = await fetch(path);
-  if (!r.ok) throw new Error(`${path} -> HTTP ${r.status}`);
-  return r.json();
+export async function getJSON(path, { timeoutMs = 10000 } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const r = await fetch(path, { cache: "no-store", signal: controller.signal });
+    if (!r.ok) throw new Error(`${path} -> HTTP ${r.status}`);
+    return r.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function postJSON(path, body = {}) {

@@ -14,10 +14,12 @@ def init_db() -> None:
     Base.metadata.create_all(get_engine())
 
 
-def save_bars(bars: list[Bar]) -> int:
-    """Insert bars; duplicates (same source/symbol/timeframe/ts) are skipped.
+def save_bars(bars: list[Bar], *, update_existing: bool = False) -> int:
+    """Insert bars; optionally refresh existing bars with finalized OHLCV.
 
-    Returns how many rows were sent. Safe to run the same backfill twice.
+    Normal backfills skip duplicates. The live MT5 pull uses ``update_existing``
+    to repair candles that an older version may have stored before they closed.
+    Returns how many rows were sent.
     """
     if not bars:
         return 0
@@ -27,7 +29,15 @@ def save_bars(bars: list[Bar]) -> int:
     with engine.begin() as conn:
         # SQLite limits variables per statement, so insert in chunks.
         for i in range(0, len(rows), 500):
-            stmt = insert(BarRow).values(rows[i : i + 500]).on_conflict_do_nothing()
+            stmt = insert(BarRow).values(rows[i : i + 500])
+            if update_existing:
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=["source", "symbol", "timeframe", "ts"],
+                    set_={name: getattr(stmt.excluded, name)
+                          for name in ("open", "high", "low", "close", "volume")},
+                )
+            else:
+                stmt = stmt.on_conflict_do_nothing()
             conn.execute(stmt)
     return len(rows)
 

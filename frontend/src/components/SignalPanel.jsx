@@ -1,4 +1,10 @@
 import { num, nyTime } from "../api.js";
+import { STRATEGY_INFO, strategyLabel } from "../strategies.js";
+
+const VERDICT_STYLE = {
+  fail: "bg-red-500/10 text-red-200 ring-red-500/30",
+  pending: "bg-amber-500/10 text-amber-200 ring-amber-500/30",
+};
 
 const ACTION_STYLE = {
   LONG: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/40",
@@ -19,14 +25,25 @@ export default function SignalPanel({ signal, market, ov, strategy }) {
   const action = signal?.action ?? "WAIT";
   const rr = signal?.entry != null && signal?.stop != null && signal?.target != null
     ? Math.abs(signal.target - signal.entry) / Math.abs(signal.entry - signal.stop) : null;
+  const name = strategy ?? ov?.active_strategy;
+  const info = STRATEGY_INFO[name];
 
   return (
     <div className="flex flex-col gap-3">
       <div className="card">
-        <div className="flex items-center justify-between">
-          <div className="label">Latest signal · {strategy ?? ov?.active_strategy}</div>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <div className="label">Latest signal</div>
+            <div className="mt-0.5 text-sm font-medium text-slate-100" title={name}>{strategyLabel(name)}</div>
+          </div>
           <span className={`rounded-md px-3 py-1 text-sm font-bold ring-1 ${ACTION_STYLE[action]}`}>{action}</span>
         </div>
+        {info && (
+          <div className={`mt-2 rounded-md px-2 py-1 text-xs ring-1 ${VERDICT_STYLE[info.tone]}`}
+            title="Backtest results are history, not a promise. Details in docs/decisions.md">
+            Backtest: {info.status}
+          </div>
+        )}
         {signal ? (
           <div className="mt-3">
             <Row k="5m bar closed" v={`${nyTime(signal.bar_close_ts)} NY`} />
@@ -69,7 +86,7 @@ export default function SignalPanel({ signal, market, ov, strategy }) {
           <>
             <Row k="Last price" v={num(market.last_price)} />
             <Row k="15m trend bias" v={market.bias_15m} />
-            <Row k="ATR (5m)" v={`${num(market.atr_5m, 1)} pts`} />
+            <Row k="ATR (5m)" v={market.unit === "$" ? `$${num(market.atr_5m, 1)}` : `${num(market.atr_5m, 1)} pts`} />
             {Object.entries(market.levels).map(([k, v]) => <Row key={k} k={k} v={num(v)} />)}
             <div className="label mb-1 mt-3">Recent Fair Value Gaps</div>
             <div className="max-h-36 overflow-y-auto text-xs">
@@ -80,10 +97,10 @@ export default function SignalPanel({ signal, market, ov, strategy }) {
                 </div>
               ))}
             </div>
-            <div className="mt-2 text-xs text-slate-500">PDH/PDL = prior day high/low · ONH/ONL = overnight high/low</div>
+            <div className="mt-2 text-xs text-slate-500">{market.levels_note ?? "PDH/PDL = prior day high/low · ONH/ONL = overnight high/low"}</div>
           </>
         ) : (
-          <p className="text-sm text-slate-400">No data.</p>
+          <p className="text-sm text-slate-400">{market ? market.message ?? "No data." : "Loading…"}</p>
         )}
       </div>
     </div>

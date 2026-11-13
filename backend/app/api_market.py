@@ -5,21 +5,50 @@ Every value comes from stored bars (source + timestamp included). Nothing is inv
 """
 from __future__ import annotations
 
+import asyncio
+import logging
 import math
 import time
+from typing import Literal
 
 from fastapi import APIRouter, Query
 
 from app.config import get_settings
 from app.core.engine import HISTORY_DAYS
 from app.core.features import build_frame, load_m1
+from app.core.sources import binance_source as bn
+from app.core.sources.mt5_source import MT5Error, fetch_mt5_m5_preview
 from app.core.strategies.base import fvg
 
 router = APIRouter(prefix="/api/market")
+log = logging.getLogger("market_preview")
 
 
 def _num(x):
     return None if x is None or (isinstance(x, float) and math.isnan(x)) else float(x)
+
+
+@router.get("/preview")
+async def preview(market: Literal["nas100", "btc"] = "nas100") -> dict:
+    """Current forming M5 candle for the chart only; never used by the engine."""
+    st = get_settings()
+    source, symbol = (bn.SOURCE, bn.SYMBOL) if market == "btc" else (st.engine_source, st.mt5_symbol)
+    try:
+        if market == "btc":
+            return await asyncio.to_thread(bn.fetch_current_m5_preview)
+        return await asyncio.to_thread(
+            fetch_mt5_m5_preview, st.mt5_symbol, st.mt5_server_tz,
+            st.mt5_terminal_path, st.engine_source,
+        )
+    except (MT5Error, bn.BinanceError) as e:
+        log.warning("%s preview unavailable: %s", market, e)
+        message = str(e)
+    except Exception:
+        log.exception("%s preview failed", market)
+        message = "Preview feed failed. Check the backend log."
+    return {"available": False, "source": source, "symbol": symbol,
+            "candle": None, "observed_ts": int(time.time()), "stale": True,
+            "message": message}
 
 
 @router.get("/analysis")
@@ -66,6 +95,16 @@ def analysis(hours: int = Query(12, ge=1, le=72), source: str | None = None, sym
         bias = "NEUTRAL"
 
     last_m1_ts = int(m1["ts"].iloc[-1])
+    if source == bn.SOURCE:
+        # BTC trades 24/7: show what the BTC strategies use (UTC-day levels and VWAP), not stock-session levels.
+        levels = {"PDH": _num(a["pudh"][last]), "PDL": _num(a["pudl"][last])}
+        levels_note = "PDH/PDL = prior UTC-day high/low · VWAP resets 00:00 UTC"
+        vwap, unit = line("dvwap"), "$"
+    else:
+        levels = {"PDH": _num(a["pdh"][last]), "PDL": _num(a["pdl"][last]),
+                  "ONH": _num(a["onh"][last]), "ONL": _num(a["onl"][last])}
+        levels_note = "PDH/PDL = prior day high/low (09:30-16:00 NY) · ONH/ONL = overnight high/low"
+        vwap, unit = line("vwap"), "pts"
     return {
         **base,
         "available": True,
@@ -75,9 +114,10 @@ def analysis(hours: int = Query(12, ge=1, le=72), source: str | None = None, sym
         "candles": candles,
         "ema20_15": line("ema20_15"),
         "ema50_15": line("ema50_15"),
-        "vwap": line("vwap"),
-        "levels": {"PDH": _num(a["pdh"][last]), "PDL": _num(a["pdl"][last]),
-                   "ONH": _num(a["onh"][last]), "ONL": _num(a["onl"][last])},
+        "vwap": vwap,
+        "levels": levels,
+        "levels_note": levels_note,
+        "unit": unit,
         "fvgs": fvgs[-15:],
         "bias_15m": bias,
         "atr_5m": _num(a["atr"][last]),
