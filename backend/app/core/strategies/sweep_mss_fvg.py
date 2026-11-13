@@ -11,7 +11,7 @@ Rules:
 - Limit at FVG midpoint, valid 6 bars; stop beyond the sweep extreme + 0.10 ATR;
   stop distance 0.5-3.0 ATR; target 2R. One trade idea per sweep.
 """
-from app.core.strategies.base import BAR, Order, Strategy, fvg, valid, window
+from app.core.strategies.base import BAR, Order, Strategy, btc_weekend, fvg, valid, window
 
 
 class SweepMSSFVG(Strategy):
@@ -22,8 +22,11 @@ class SweepMSSFVG(Strategy):
     def new_day(self, day):
         self.setups = []   # active sweeps: dict(side, bar, extreme, swing)
 
+    def in_window(self, i, a) -> bool:
+        return window(a, i, self.start, self.end, self.clock)
+
     def on_bar(self, i, a):
-        if not window(a, i, self.start, self.end, self.clock):
+        if not self.in_window(i, a):
             return None
         h, l, c, atr = a["h"][i], a["l"][i], a["c"][i], a["atr"][i]
         if not valid(atr) or atr <= 0 or i < 4:
@@ -70,3 +73,13 @@ class LondonSweepMSSFVG(SweepMSSFVG):
     name = "london_sweep_mss_fvg"
     clock, start, end = "lmod", 8 * 60 + 5, 10 * 60
     highs, lows = ("pdh", "ash"), ("pdl", "asl")
+
+
+class BTCWeekendSweepMSSFVG(SweepMSSFVG):
+    """Same rules on BTCUSDT weekends (Fri 17:00 - Sun 15:30 NY).
+    Liquidity = prior UTC-day high/low (crypto has no cash session or overnight range)."""
+    name = "btc_weekend_sweep_mss_fvg"
+    highs, lows = ("pudh",), ("pudl",)
+
+    def in_window(self, i, a) -> bool:
+        return btc_weekend(a, i)

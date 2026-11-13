@@ -95,12 +95,12 @@ def main() -> int:
         print(f"[{name}] signals {res.signals}, filled {len(res.trades)}, cancelled {dict(res.cancelled)}, "
               f"top risk rejections: {top_rej}")
 
-    hdr = f"\n{'strategy':<22}{'split':<14}{'trades':>7}{'win%':>7}{'avgR':>7}{'PF':>6}{'totalR':>8}{'return%':>9}{'maxDD%':>8}{'/month':>7}  {'$ needed*':>9}  note"
+    hdr = f"\n{'strategy':<28}{'split':<14}{'trades':>7}{'win%':>7}{'avgR':>7}{'PF':>6}{'totalR':>8}{'return%':>9}{'maxDD%':>8}{'/month':>7}  {'$ needed*':>9}  note"
     print(hdr)
     print("-" * len(hdr))
     for name, split, st, need in rows:
         pf = f"{st.profit_factor:.2f}" if st.profit_factor != float("inf") else "inf"
-        print(f"{name:<22}{split:<14}{st.n:>7}{st.win_rate:>7.1f}{st.expectancy_r:>7.2f}{pf:>6}{st.total_r:>8.1f}"
+        print(f"{name:<28}{split:<14}{st.n:>7}{st.win_rate:>7.1f}{st.expectancy_r:>7.2f}{pf:>6}{st.total_r:>8.1f}"
               f"{st.return_pct:>9.1f}{st.max_dd_pct:>8.1f}{st.trades_per_month:>7.1f}  {need:>9.0f}  {st.note}")
     print(f"\n* $ needed = median account size at which {mk.instrument.symbol}'s minimum lot {mk.instrument.min_lot:g} fits the stop at 0.5% risk.")
     print("  Paper balance is $1,000 (owner approved 2026-11-13). Trades needing more than that are rejected.")

@@ -8,7 +8,7 @@ Rules (frozen):
 - Limit at the FVG midpoint (consequent encroachment), valid 6 bars, cancelled if a bar closes beyond the gap
 - Stop = c1 extreme -/+ 0.10 ATR; stop distance must be 0.5-2.0 ATR; target 2R
 """
-from app.core.strategies.base import BAR, Order, Strategy, fvg, valid, window
+from app.core.strategies.base import BAR, Order, Strategy, btc_weekend, fvg, valid, window
 
 
 class TrendFVG(Strategy):
@@ -65,5 +65,4 @@ class BTCWeekendTrendFVG(TrendFVG):
     vwap_key = "dvwap"
 
     def in_window(self, i, a) -> bool:
-        wd, close_min = a["weekday"][i], a["mod"][i] + 5
-        return (wd == 4 and close_min >= 17 * 60) or wd == 5 or (wd == 6 and close_min <= 15 * 60 + 30)
+        return btc_weekend(a, i)

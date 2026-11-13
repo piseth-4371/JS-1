@@ -56,6 +56,12 @@ def window(a: dict, i: int, start_min: int, end_min: int, clock: str = "mod") ->
     return start_min <= close_min <= end_min
 
 
+def btc_weekend(a: dict, i: int) -> bool:
+    """BTC book entry window: bar CLOSES Fri 17:00 NY .. Sun 15:30 NY (positions flat by Sun 17:00)."""
+    wd, close_min = a["weekday"][i], a["mod"][i] + 5
+    return (wd == 4 and close_min >= 17 * 60) or wd == 5 or (wd == 6 and close_min <= 15 * 60 + 30)
+
+
 def valid(*xs) -> bool:
     return all(x is not None and np.isfinite(x) for x in xs)
 

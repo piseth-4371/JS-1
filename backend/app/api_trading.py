@@ -36,7 +36,10 @@ def _feed(market: Market) -> tuple[str, str]:
 
 def _last_bar(s: Session, market: Market):
     src, sym = _feed(market)
-    return s.scalar(select(BarRow).where(BarRow.source == src, BarRow.symbol == sym).order_by(desc(BarRow.ts)).limit(1))
+    # Filtering on timeframe too lets SQLite walk the (source, symbol, timeframe, ts) index
+    # backwards: instant, instead of sorting millions of rows (~2 s each on BTC history).
+    return s.scalar(select(BarRow).where(BarRow.source == src, BarRow.symbol == sym, BarRow.timeframe == "M1")
+                    .order_by(desc(BarRow.ts)).limit(1))
 
 
 def _row(r) -> dict:

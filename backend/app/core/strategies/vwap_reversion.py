@@ -7,19 +7,23 @@ Rules:
 - Market order next minute; stop = candle extreme -/+ 0.25 ATR (at least 0.5 ATR away); target 2R
 - After a signal, wait 6 bars before the next one
 """
-from app.core.strategies.base import BAR, Order, Strategy, valid, window
+from app.core.strategies.base import BAR, Order, Strategy, btc_weekend, valid, window
 
 
 class VWAPReversion(Strategy):
     name = "vwap_reversion"
+    vwap_key = "vwap"
 
     def new_day(self, day):
         self.last_signal = -10**9
 
+    def in_window(self, i, a) -> bool:
+        return window(a, i, 10 * 60, 15 * 60)
+
     def on_bar(self, i, a):
-        if i - self.last_signal < 6 or not window(a, i, 10 * 60, 15 * 60):
+        if i - self.last_signal < 6 or not self.in_window(i, a):
             return None
-        o, h, l, c, atr, vwap = a["o"][i], a["h"][i], a["l"][i], a["c"][i], a["atr"][i], a["vwap"][i]
+        o, h, l, c, atr, vwap = a["o"][i], a["h"][i], a["l"][i], a["c"][i], a["atr"][i], a[self.vwap_key][i]
         if not valid(atr, vwap) or atr <= 0:
             return None
         dev = (c - vwap) / atr
@@ -33,3 +37,12 @@ class VWAPReversion(Strategy):
         return Order(self.name, side, "market", c, stop, None, self.rr,
                      placed_ts=a["close_ts"][i], expiry_ts=a["close_ts"][i] + BAR,
                      reason=f"{abs(dev):.1f} ATR away from VWAP, turning back")
+
+
+class BTCWeekendVWAPReversion(VWAPReversion):
+    """Same rules on BTCUSDT weekends (Fri 17:00 - Sun 15:30 NY), UTC-day VWAP."""
+    name = "btc_weekend_vwap_reversion"
+    vwap_key = "dvwap"
+
+    def in_window(self, i, a) -> bool:
+        return btc_weekend(a, i)

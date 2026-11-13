@@ -77,6 +77,7 @@ nas100-control-center/
 - [x] Auto-switch research: `app/backtest/selector.py` + `scripts/run_selector.py` (weekly walk-forward, no look-ahead, 5 tests). 2019 result: worse than fixed strategies; not enabled. 110 tests pass.
 - [x] News blackout (2026-11-13): 255 sourced events 2019-2026, enforced in backtester + engine + broker, dashboard badge. 118 tests pass.
 - [x] Robustness tool (`scripts/robustness.py`), daily paper report (`scripts/daily_report.py`), DB backup (`scripts/backup_db.py`), `start.ps1`, BEA GDP + PCE in the news calendar (444 events). 127 tests pass.
+- [x] BTC backtests (2019-2024): all 5 weekend strategies fail (fees 0.4-1.1R per trade, ~0R before costs). Overview speed fix. 131 tests pass.
 - [ ] Next: finish download → run backtest → review → choose strategy (see docs/review_day7.md §5–6)
 - Data facts: MT5 times = server time (Europe/Athens for MetaQuotes-Demo). Dukascopy month in URL is 0-based, price ÷1000.
 

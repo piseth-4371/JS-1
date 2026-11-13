@@ -102,6 +102,13 @@ def build_frame(m1: pd.DataFrame, hold_mask=None) -> Frame:
     # UTC-day VWAP (24/7 markets such as BTC).
     utc_day = pd.to_datetime(df["ts"], unit="s", utc=True).dt.date
     df["dvwap"] = session_vwap(df["h"], df["l"], df["c"], df["v"], utc_day)
+    # UTC clock + prior UTC-day high/low (the crypto "daily" levels; complete at 00:00 UTC).
+    df["umod"] = (df["ts"] % 86400) // 60
+    df["uday"] = df["ts"] // 86400
+    ud = df.groupby("uday").agg(day_h=("h", "max"), day_l=("l", "min"))
+    ud = ud.reindex(range(int(df["uday"].min()), int(df["uday"].max()) + 1))  # missing days stay NaN
+    ud["pudh"], ud["pudl"] = ud["day_h"].shift(1), ud["day_l"].shift(1)
+    df = df.merge(ud[["pudh", "pudl"]], left_on="uday", right_index=True, how="left")
 
     # London session VWAP: from 08:00 London until the NY cash open.
     ldn = (df["lmod"] >= LONDON_OPEN) & (df["mod"] < RTH_OPEN)
@@ -117,7 +124,7 @@ def build_frame(m1: pd.DataFrame, hold_mask=None) -> Frame:
 
     cols = ["ts", "o", "h", "l", "c", "v", "mod", "close_ts", "consec", "atr", "atr_q10", "atr_q95",
             "close_15", "ema20_15", "ema50_15", "vwap", "pdh", "pdl", "onh", "onl",
-            "lmod", "lvwap", "ash", "asl", "dvwap"]
+            "lmod", "lvwap", "ash", "asl", "dvwap", "umod", "uday", "pudh", "pudl"]
     a = {k: df[k].to_numpy() for k in cols}
     a["ny_date"] = df["ny_date"].to_numpy()
     a["weekday"] = df["weekday"].to_numpy()

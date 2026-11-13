@@ -8,11 +8,15 @@ Rules:
 - Limit at FVG midpoint, valid 6 bars; stop = c1 extreme -/+ 0.10 ATR;
   stop distance 0.5-2.0 ATR; target 2R; one trade idea per day
 """
-from app.core.strategies.base import BAR, Order, Strategy, fvg, valid, window
+from app.core.strategies.base import BAR, Order, Strategy, btc_weekend, fvg, valid, window
 
 
 class SilverBullet(Strategy):
     name = "silver_bullet"
+    highs, lows = ("pdh", "onh"), ("pdl", "onl")
+
+    def allowed(self, i, a) -> bool:
+        return True
 
     def new_day(self, day):
         self.bias = 0
@@ -25,8 +29,8 @@ class SilverBullet(Strategy):
             return None
         h, l, c, atr = a["h"][i], a["l"][i], a["c"][i], a["atr"][i]
 
-        highs = [a["pdh"][i], a["onh"][i]]
-        lows = [a["pdl"][i], a["onl"][i]]
+        highs = [a[k][i] for k in self.highs]
+        lows = [a[k][i] for k in self.lows]
         if mod >= 600 and self.r_hi is not None:
             highs.append(self.r_hi)
             lows.append(self.r_lo)
@@ -39,7 +43,8 @@ class SilverBullet(Strategy):
             self.r_lo = l if self.r_lo is None else min(self.r_lo, l)
             return None
 
-        if self.done or self.bias == 0 or not window(a, i, 10 * 60 + 5, 11 * 60) or not valid(atr):
+        if (self.done or self.bias == 0 or not window(a, i, 10 * 60 + 5, 11 * 60) or not valid(atr)
+                or not self.allowed(i, a)):
             return None
         side = self.bias
         g = fvg(a, i, side)
@@ -56,3 +61,13 @@ class SilverBullet(Strategy):
                      placed_ts=a["close_ts"][i], expiry_ts=a["close_ts"][i] + 6 * BAR,
                      cancel_level=lo if side == 1 else hi,
                      reason="Silver Bullet: sweep then FVG in 10-11 window")
+
+
+class BTCWeekendSilverBullet(SilverBullet):
+    """Same rules and NY clock on BTCUSDT weekends (so Saturday and Sunday 10:00-11:00 NY).
+    Liquidity = prior UTC-day high/low + the 09:30-10:00 NY range."""
+    name = "btc_weekend_silver_bullet"
+    highs, lows = ("pudh",), ("pudl",)
+
+    def allowed(self, i, a) -> bool:
+        return btc_weekend(a, i)
