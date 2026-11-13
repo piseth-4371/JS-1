@@ -9,7 +9,9 @@ How it avoids fooling itself:
 - Costs on every trade: spread, plus slippage on market/stop entries and on stop/forced exits.
 - Every order goes through the real Risk Manager (risk.evaluate), with the same
   daily/weekly limits, 3 trades/day, 1 position, 2-loss stop as live.
-- All positions are closed at 15:55 New York.
+- All positions are closed at the end of the book's window (NAS100 15:55 New York).
+- High-impact news (app/core/news.py): no new entry within ±30 min of CPI/NFP/FOMC,
+  pending orders are cancelled inside that window, no trading outside the calendar's coverage.
 
 Results are measured in R (profit divided by the planned risk), so they don't
 depend on account size. Separately we check what the $10 account would allow.
@@ -101,6 +103,10 @@ def run(strategy: Strategy, f: Frame, settings: RiskSettings | None = None, cost
         if pending is None or pos is not None:
             return
         od: Order = pending["order"]
+        if m["news"][j]:
+            res.cancelled["news blackout"] += 1
+            pending = None
+            return
         if m["ts"][j] >= od.expiry_ts or not m["can_hold"][j]:
             res.cancelled["expired"] += 1
             pending = None
@@ -150,6 +156,12 @@ def run(strategy: Strategy, f: Frame, settings: RiskSettings | None = None, cost
         if order is None:
             continue
         res.signals += 1
+        if not a["news_known"][i]:
+            res.rejections["No news calendar for this date"] += 1
+            continue
+        if a["news"][i]:
+            res.rejections["High-impact news blackout"] += 1
+            continue
         if pos is not None or pending is not None:
             res.rejections["Busy: a position or order is already open"] += 1
             continue

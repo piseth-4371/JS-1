@@ -13,7 +13,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.core import state
+from app.core import news, state
 from app.core.markets import BTCUSD, MARKETS, NAS100, Market, market_for_strategy
 from app.core.paper_broker import PaperBroker
 from app.core.risk import RiskSettings
@@ -84,6 +84,13 @@ def overview() -> dict:
             "last_bar_ts": last_bar.ts if last_bar else None,
             "risk_settings": rs.__dict__,
             "markets": books,
+            "news": {
+                "blackout_now": (ev.label if (ev := news.blackout_event(now)) else None),
+                "calendar_covers_now": news.covered(now),
+                "calendar_until": str(news.COVERED_UNTIL),
+                "events_included": list(news.EVENTS),
+                "upcoming": [{"label": e.label, "ts": e.ts, "source": e.source} for e in news.upcoming(now, 24 * 7)],
+            },
             "trading_now": next((x["key"] for x in books if x["open_now"] and x["enabled"]), None),
         }
 

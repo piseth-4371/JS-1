@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core import state
+from app.core import news, state
 from app.core.features import build_frame, load_m1
 from app.core.fills import Costs
 from app.core.market_data import Bar, validate_bars
@@ -146,6 +146,9 @@ class TradingEngine:
         acct = broker.account_state(now)
         dec = evaluate(OrderRequest(order.side, order.entry, order.stop, target), acct, self.inst, self.settings)
         reasons = list(dec.reasons)
+        block = news.entry_block_reason(close_ts)
+        if block:
+            reasons.insert(0, block)
         if broker.pending_orders():
             reasons.append("An order is already pending")
         if not state.get_bool(s, "auto_trading"):

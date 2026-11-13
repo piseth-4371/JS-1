@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core import state
+from app.core import news, state
 from app.core.fills import Costs, check_exit, net_points, try_fill
 from app.core.market_data import Bar
 from app.core.markets import NAS100, Market
@@ -156,6 +156,10 @@ class PaperBroker:
                 continue
             if b.ts >= o.expiry_ts or not hold:
                 self._cancel(o, "expired", b.ts)
+                continue
+            ev = news.blackout_event(b.ts)
+            if ev:
+                self._cancel(o, f"news blackout: {ev.label}", b.ts)
                 continue
             if self.all_open_positions():
                 continue                     # one position in total, across both books

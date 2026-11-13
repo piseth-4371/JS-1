@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from sqlalchemy import text
 
+from app.core import news
 from app.core.indicators import atr, ema, session_vwap
 from app.db import get_engine
 
@@ -120,10 +121,13 @@ def build_frame(m1: pd.DataFrame, hold_mask=None) -> Frame:
     a = {k: df[k].to_numpy() for k in cols}
     a["ny_date"] = df["ny_date"].to_numpy()
     a["weekday"] = df["weekday"].to_numpy()
+    a["news"] = news.blackout_mask(a["close_ts"])          # signal bar closes within ±30 min of an event
+    a["news_known"] = news.covered_mask(a["close_ts"])     # the calendar covers this date
     m = {k: m1[k].to_numpy() for k in ["ts", "o", "h", "l", "c"]}
     if hold_mask is None:
         m["can_hold"] = ((m1["mod"] >= HOLD_FROM) & (m1["mod"] < FLAT_AT) & (m1["weekday"] < 5)).to_numpy()
     else:
         m["can_hold"] = np.asarray(hold_mask(m1["mod"].to_numpy(), m1["weekday"].to_numpy()))
     m["ny_date"] = m1["ny_date"].to_numpy()
+    m["news"] = news.blackout_mask(m["ts"])
     return Frame(df, a, m)

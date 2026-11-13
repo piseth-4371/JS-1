@@ -32,11 +32,12 @@ def frame(minutes, can_hold=None, five_closes=None):
     m_o, m_h, m_l, m_c = (np.array(x, dtype=float) for x in zip(*minutes))
     m = {"ts": T0 + np.arange(n) * 60, "o": m_o, "h": m_h, "l": m_l, "c": m_c,
          "can_hold": np.array(can_hold if can_hold is not None else [True] * n),
-         "ny_date": np.array(["d"] * n, dtype=object)}
+         "ny_date": np.array(["d"] * n, dtype=object), "news": np.zeros(n, dtype=bool)}
     k = n // 5
     a = {"ts": T0 + np.arange(k) * 300, "close_ts": T0 + np.arange(k) * 300 + 300,
          "c": np.array(five_closes if five_closes else [m_c[i * 5 + 4] for i in range(k)], dtype=float),
-         "ny_date": np.array([__import__("datetime").date(2026, 11, 9)] * k, dtype=object)}
+         "ny_date": np.array([__import__("datetime").date(2026, 11, 9)] * k, dtype=object),
+         "news": np.zeros(k, dtype=bool), "news_known": np.ones(k, dtype=bool)}
     return Frame(None, a, m)
 
 

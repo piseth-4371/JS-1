@@ -65,6 +65,25 @@ export default function Header({ ov, market, refresh, setError, view, book, setB
         Trading now: {ov?.trading_now === "btc" ? "BTC (weekend)" : ov?.trading_now === "nas100" ? "NAS100" : "nothing (both closed)"}
       </span>
 
+      {ov?.news && (
+        <span
+          className={`rounded-md px-2 py-1 text-xs ring-1 ${
+            ov.news.blackout_now || !ov.news.calendar_covers_now
+              ? "bg-red-600/20 font-semibold text-red-200 ring-red-500/50"
+              : "bg-slate-800 text-slate-300 ring-slate-700"
+          }`}
+          title={`High-impact US news (${ov.news.events_included.join(", ")}): no new entries ±30 min. Official sources: BLS, Federal Reserve. Calendar valid until ${ov.news.calendar_until}.`}
+        >
+          {!ov.news.calendar_covers_now
+            ? "NEWS CALENDAR MISSING: no trading"
+            : ov.news.blackout_now
+              ? `NEWS BLACKOUT: ${ov.news.blackout_now}`
+              : ov.news.upcoming.length
+                ? `Next news: ${ov.news.upcoming[0].label}`
+                : "No high-impact news in the next 7 days"}
+        </span>
+      )}
+
       <div className="flex overflow-hidden rounded-md ring-1 ring-slate-700" role="group" aria-label="Which market to show">
         {(ov?.markets ?? [{ key: "nas100", label: "NAS100" }, { key: "btc", label: "BTC" }]).map((m) => (
           <button
