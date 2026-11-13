@@ -1,0 +1,10 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+pydantic-settings>=2.3
+sqlalchemy>=2.0
+pytest>=8.0
+httpx>=0.27
+tzdata>=2024.1  # time-zone database (Windows has none built in)
+MetaTrader5>=5.0.45  # Windows only; needs the MT5 terminal running
+pandas>=2.2

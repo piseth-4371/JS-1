@@ -1,0 +1,69 @@
+"""Save and load bars. The only module that talks SQL for market data."""
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.orm import Session
+
+from app.core.market_data import Bar
+from app.db import get_engine
+from app.models import Base, BarRow
+
+
+def init_db() -> None:
+    """Create tables if they don't exist (Alembic migrations come later)."""
+    Base.metadata.create_all(get_engine())
+
+
+def save_bars(bars: list[Bar]) -> int:
+    """Insert bars; duplicates (same source/symbol/timeframe/ts) are skipped.
+
+    Returns how many rows were sent. Safe to run the same backfill twice.
+    """
+    if not bars:
+        return 0
+    engine = get_engine()
+    insert = pg_insert if engine.dialect.name == "postgresql" else sqlite_insert
+    rows = [b.to_dict() for b in bars]
+    with engine.begin() as conn:
+        # SQLite limits variables per statement, so insert in chunks.
+        for i in range(0, len(rows), 500):
+            stmt = insert(BarRow).values(rows[i : i + 500]).on_conflict_do_nothing()
+            conn.execute(stmt)
+    return len(rows)
+
+
+def load_bars(source: str, symbol: str, timeframe: str, start_ts: int, end_ts: int) -> list[Bar]:
+    """Bars with start_ts <= ts < end_ts, oldest first."""
+    with Session(get_engine()) as s:
+        q = (
+            select(BarRow)
+            .where(
+                BarRow.source == source,
+                BarRow.symbol == symbol,
+                BarRow.timeframe == timeframe,
+                BarRow.ts >= start_ts,
+                BarRow.ts < end_ts,
+            )
+            .order_by(BarRow.ts)
+        )
+        return [Bar.from_row(r) for r in s.scalars(q)]
+
+
+def days_present(source: str, symbol: str, timeframe: str = "M1") -> set[int]:
+    """UTC day numbers (ts // 86400) that already have bars - used to resume downloads."""
+    with Session(get_engine()) as s:
+        q = select(BarRow.ts / 86400).where(
+            BarRow.source == source, BarRow.symbol == symbol, BarRow.timeframe == timeframe).distinct()
+        return {int(d) for d in s.scalars(q)}
+
+
+def count_bars(source: str, symbol: str, timeframe: str = "M1") -> tuple[int, int | None, int | None]:
+    """(count, first_ts, last_ts) for a feed."""
+    from sqlalchemy import func
+
+    with Session(get_engine()) as s:
+        q = select(func.count(), func.min(BarRow.ts), func.max(BarRow.ts)).where(
+            BarRow.source == source, BarRow.symbol == symbol, BarRow.timeframe == timeframe
+        )
+        n, first, last = s.execute(q).one()
+        return n, first, last
