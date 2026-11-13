@@ -1,4 +1,4 @@
-# NAS100 AI Trading Control Center (paper trading only)
+# LITTLE (paper trading only)
 
 See `CLAUDE.md` for the project manual and `docs/decisions.md` for the decision log.
 

@@ -30,7 +30,7 @@ export default function Header({ ov, market, refresh, setError, view, book, setB
 
   return (
     <header className="flex flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-900/80 px-4 py-3">
-      <h1 className="mr-2 text-lg font-semibold">NAS100 Control Center</h1>
+      <h1 className="mr-2 text-lg font-semibold">LITTLE</h1>
 
       <span className="rounded-md bg-emerald-600/20 px-2 py-1 text-xs font-bold text-emerald-300 ring-1 ring-emerald-500/40">
         PAPER TRADING

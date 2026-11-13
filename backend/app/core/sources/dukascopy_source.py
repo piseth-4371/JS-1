@@ -56,7 +56,7 @@ class RateLimited(ConnectionError):
 
 
 def _get(url: str, timeout: float) -> bytes | None:
-    req = urllib.request.Request(url, headers={"User-Agent": "nas100-control-center/0.1"})
+    req = urllib.request.Request(url, headers={"User-Agent": "LITTLE/0.1"})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.read()

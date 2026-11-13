@@ -1,4 +1,4 @@
-# NAS100 AI Trading Control Center — Project Manual
+# LITTLE — Project Manual
 
 ## 1. Purpose
 Learning project: a **paper-trading** control center for the Nasdaq-100 (Exness symbol `USTEC`).

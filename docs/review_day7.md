@@ -1,4 +1,4 @@
-# Day 7 Review: NAS100 AI Trading Control Center (paper)
+# Day 7 Review: LITTLE (paper)
 
 Date: 2026-11-13 · Status: **Version 1 built. Paper only. No strategy is proven yet.**
 

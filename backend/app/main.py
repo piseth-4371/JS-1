@@ -39,7 +39,7 @@ async def lifespan(_: FastAPI):
         task.cancel()
 
 
-app = FastAPI(title="NAS100 AI Trading Control Center", version="0.5.0", lifespan=lifespan)
+app = FastAPI(title="LITTLE", version="0.5.0", lifespan=lifespan)
 app.include_router(trading_router)
 app.include_router(market_router)
 
