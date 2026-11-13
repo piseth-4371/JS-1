@@ -71,6 +71,7 @@ nas100-control-center/
 - [x] Day 5: React + Vite + Tailwind + lightweight-charts dashboard in `frontend/` (header with PAPER badge, data source + stale flag, strategy select, auto-trading, kill switch; overview tiles; NY-time chart with EMA20/50 (15m), VWAP, PDH/PDL/ONH/ONL, FVG markers; signal + risk panel; journal tabs). `GET /api/market/analysis`. 80 backend tests pass; checked in browser with live MT5 demo data.
 - [x] Day 6 (partial): paper metrics `/api/journal/metrics` + Metrics tab, Markdown backtest report, prior-day-level fix. FULL BACKTEST STILL PENDING (download).
 - [x] Day 7: `scripts/replay_day.py` (full-day replay through the real engine), failure-injection tests (`tests/test_reliability.py`), NumPy-bytes bug fix, engine performance fix, `.claude/` skills (risk-audit, backtest-review, teach-step) + protect_files hook, `docs/review_day7.md`. 89 tests pass.
+- [x] London variants (owner approved 2026-11-13): `london_trend_fvg`, `london_sweep_mss_fvg`; features `lmod` (London clock), `lvwap`, Asia range `ash`/`asl`; positions may be held 03:00-15:55 NY. 95 tests pass. 2019 smoke run: both London variants negative so far (not conclusive).
 - [ ] Next: finish download → run backtest → review → choose strategy (see docs/review_day7.md §5–6)
 - Data facts: MT5 times = server time (Europe/Athens for MetaQuotes-Demo). Dukascopy month in URL is 0-based, price ÷1000.
 

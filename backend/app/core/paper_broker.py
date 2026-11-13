@@ -26,14 +26,14 @@ from app.core.strategies.base import Order
 from app.models import OrderRow, PositionRow
 
 NY = ZoneInfo("America/New_York")
-RTH_OPEN_MIN, FLAT_MIN = 570, 955
+HOLD_FROM_MIN, FLAT_MIN = 180, 955   # same as features.HOLD_FROM / FLAT_AT
 
 
 def can_hold(ts: int) -> bool:
-    """Positions may be open only 09:30-15:55 New York on weekdays."""
+    """Positions may be open only 03:00-15:55 New York on weekdays (London open .. before the US close)."""
     d = datetime.fromtimestamp(ts, NY)
     m = d.hour * 60 + d.minute
-    return d.weekday() < 5 and RTH_OPEN_MIN <= m < FLAT_MIN
+    return d.weekday() < 5 and HOLD_FROM_MIN <= m < FLAT_MIN
 
 
 def ny_day_start(ts: int) -> int:

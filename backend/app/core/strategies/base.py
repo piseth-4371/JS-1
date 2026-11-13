@@ -50,9 +50,9 @@ class Strategy:
         raise NotImplementedError
 
 
-def window(a: dict, i: int, start_min: int, end_min: int) -> bool:
-    """True if bar i CLOSES inside [start_min, end_min] (NY minutes of day)."""
-    close_min = a["mod"][i] + 5
+def window(a: dict, i: int, start_min: int, end_min: int, clock: str = "mod") -> bool:
+    """True if bar i CLOSES inside [start_min, end_min] (minutes of day; clock "mod" = NY, "lmod" = London)."""
+    close_min = a[clock][i] + 5
     return start_min <= close_min <= end_min
 
 

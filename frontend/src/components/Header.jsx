@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { nyTime, postJSON } from "../api.js";
 
-const STRATEGIES = ["trend_fvg", "sweep_mss_fvg", "orb", "vwap_reversion", "silver_bullet"];
+const STRATEGIES = ["trend_fvg", "sweep_mss_fvg", "orb", "vwap_reversion", "silver_bullet",
+  "london_trend_fvg", "london_sweep_mss_fvg"];
 
 export default function Header({ ov, market, refresh, setError }) {
   const [busy, setBusy] = useState(false);

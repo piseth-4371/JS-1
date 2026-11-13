@@ -16,22 +16,24 @@ from app.core.strategies.base import BAR, Order, Strategy, fvg, valid, window
 
 class SweepMSSFVG(Strategy):
     name = "sweep_mss_fvg"
+    clock, start, end = "mod", 9 * 60 + 35, 11 * 60 + 30     # NY 09:35-11:30
+    highs, lows = ("pdh", "onh"), ("pdl", "onl")            # prior day + overnight range
 
     def new_day(self, day):
         self.setups = []   # active sweeps: dict(side, bar, extreme, swing)
 
     def on_bar(self, i, a):
-        if not window(a, i, 9 * 60 + 35, 11 * 60 + 30):
+        if not window(a, i, self.start, self.end, self.clock):
             return None
         h, l, c, atr = a["h"][i], a["l"][i], a["c"][i], a["atr"][i]
         if not valid(atr) or atr <= 0 or i < 4:
             return None
 
         # 1. New sweeps on this bar
-        for lvl in (a["pdh"][i], a["onh"][i]):
+        for lvl in (a[k][i] for k in self.highs):
             if valid(lvl) and h > lvl and c < lvl:
                 self.setups.append(dict(side=-1, bar=i, extreme=h, swing=min(a["l"][i - 3:i])))
-        for lvl in (a["pdl"][i], a["onl"][i]):
+        for lvl in (a[k][i] for k in self.lows):
             if valid(lvl) and l < lvl and c > lvl:
                 self.setups.append(dict(side=1, bar=i, extreme=l, swing=max(a["h"][i - 3:i])))
 
@@ -60,3 +62,11 @@ class SweepMSSFVG(Strategy):
                          cancel_level=lo if side == 1 else hi,
                          reason="Liquidity sweep -> structure shift -> FVG")
         return None
+
+
+class LondonSweepMSSFVG(SweepMSSFVG):
+    """Same rules, London session: bars closing 08:05-10:00 London time.
+    Liquidity = prior-day high/low and the ASIA range (18:00 NY .. 08:00 London)."""
+    name = "london_sweep_mss_fvg"
+    clock, start, end = "lmod", 8 * 60 + 5, 10 * 60
+    highs, lows = ("pdh", "ash"), ("pdl", "asl")

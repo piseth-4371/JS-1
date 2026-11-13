@@ -27,3 +27,4 @@
 | 2026-11-13 | Claude Code: CLAUDE.md + skills risk-audit, backtest-review, teach-step + PreToolUse hook blocking .env edits and `order_send(` | Enforced by the harness, not memory |
 | 2026-11-13 | Live-trading gates written in docs/review_day7.md §5 | Profit over 7 days is never enough |
 | 2026-11-13 | Paper balance $10 → $1,000 (owner approved). `STARTING_BALANCE` default 1000; risk % limits unchanged | At $10 the 0.1 min lot made every trade exceed 0.5% risk, so nothing could be tested |
+| 2026-11-13 | Added London-session research variants `london_trend_fvg` (08:15-10:00 London, London VWAP) and `london_sweep_mss_fvg` (08:05-10:00 London, Asia range + PDH/PDL). Holding window widened to 03:00-15:55 NY (NY strategies unchanged: they only enter from 09:35) | Owner asked to test Asia/London; same frozen rules, only the session changes. Unproven until dev + validation backtests pass |

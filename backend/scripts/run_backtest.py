@@ -82,15 +82,15 @@ def main() -> int:
         print(f"[{name}] signals {res.signals}, filled {len(res.trades)}, cancelled {dict(res.cancelled)}, "
               f"top risk rejections: {top_rej}")
 
-    hdr = f"\n{'strategy':<15}{'split':<14}{'trades':>7}{'win%':>7}{'avgR':>7}{'PF':>6}{'totalR':>8}{'return%':>9}{'maxDD%':>8}{'/month':>7}  {'$ needed*':>9}  note"
+    hdr = f"\n{'strategy':<22}{'split':<14}{'trades':>7}{'win%':>7}{'avgR':>7}{'PF':>6}{'totalR':>8}{'return%':>9}{'maxDD%':>8}{'/month':>7}  {'$ needed*':>9}  note"
     print(hdr)
     print("-" * len(hdr))
     for name, split, st, need in rows:
         pf = f"{st.profit_factor:.2f}" if st.profit_factor != float("inf") else "inf"
-        print(f"{name:<15}{split:<14}{st.n:>7}{st.win_rate:>7.1f}{st.expectancy_r:>7.2f}{pf:>6}{st.total_r:>8.1f}"
+        print(f"{name:<22}{split:<14}{st.n:>7}{st.win_rate:>7.1f}{st.expectancy_r:>7.2f}{pf:>6}{st.total_r:>8.1f}"
               f"{st.return_pct:>9.1f}{st.max_dd_pct:>8.1f}{st.trades_per_month:>7.1f}  {need:>9.0f}  {st.note}")
     print("\n* $ needed = median account size at which USTEC's 0.1 minimum lot fits the stop at 0.5% risk.")
-    print("  Your $10 account: every one of these trades would be REJECTED by the Risk Manager.")
+    print("  Paper balance is $1,000 (owner approved 2026-11-13). Trades needing more than that are rejected.")
 
     with open(out_dir / "backtest_trades.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(asdict(all_trades[0]).keys()) if all_trades else ["none"])
@@ -117,7 +117,7 @@ def main() -> int:
         md.append(f"| {name} | {split} | {st.n} | {st.win_rate:.1f} | {st.expectancy_r:.2f} | {pf} | {st.total_r:.1f} | "
                   f"{st.return_pct:.1f} | {st.max_dd_pct:.1f} | {st.trades_per_month:.1f} | {need:.0f} | {st.note} |")
     md += ["", "\\* median account size at which USTEC's 0.1 minimum lot fits the stop at 0.5% risk. "
-           "At $10 every trade is rejected.", "",
+           "The paper balance is $1,000; at $10 every trade would be rejected.", "",
            "**Reading this table:** avg R = average result per trade in units of risk (the edge). Above 0 after costs "
            "on BOTH development and validation is the minimum bar. Past results do not guarantee future results."]
     report = Path(__file__).resolve().parent.parent.parent / "docs" / ("backtest_report_oos.md" if a.oos else "backtest_report.md")

@@ -13,12 +13,13 @@ from app.core.strategies.base import BAR, Order, Strategy, fvg, valid, window
 
 class TrendFVG(Strategy):
     name = "trend_fvg"
+    clock, start, end, vwap_key = "mod", 9 * 60 + 45, 11 * 60 + 30, "vwap"   # NY 09:45-11:30, NY VWAP
 
     def on_bar(self, i, a):
-        if not window(a, i, 9 * 60 + 45, 11 * 60 + 30):
+        if not window(a, i, self.start, self.end, self.clock):
             return None
         c, atr = a["c"][i], a["atr"][i]
-        e20, e50, c15, vwap = a["ema20_15"][i], a["ema50_15"][i], a["close_15"][i], a["vwap"][i]
+        e20, e50, c15, vwap = a["ema20_15"][i], a["ema50_15"][i], a["close_15"][i], a[self.vwap_key][i]
         if not valid(atr, e20, e50, c15, vwap, a["atr_q10"][i], a["atr_q95"][i]):
             return None
         if not (a["atr_q10"][i] <= atr <= a["atr_q95"][i]):
@@ -44,3 +45,9 @@ class TrendFVG(Strategy):
                      placed_ts=a["close_ts"][i], expiry_ts=a["close_ts"][i] + 6 * BAR,
                      cancel_level=lo if side == 1 else hi,
                      reason="Trend + pullback into displacement FVG")
+
+
+class LondonTrendFVG(TrendFVG):
+    """Same rules, London session: bars closing 08:15-10:00 London time, London VWAP (from 08:00 London)."""
+    name = "london_trend_fvg"
+    clock, start, end, vwap_key = "lmod", 8 * 60 + 15, 10 * 60, "lvwap"
