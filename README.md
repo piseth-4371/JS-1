@@ -46,6 +46,8 @@ cd backend
 .\.venv\Scripts\python scripts\run_backtest.py --market btc            # BTC backtest (dev + validation)
 ```
 
+> **Start here:** [docs/lessons.md](docs/lessons.md) explains, in plain English, what every backtest in this project found (short version: no strategy has an edge after costs).
+
 ## Daily routine (PowerShell)
 One click: from this folder run `.\start.ps1` (backs up the database, then opens the backend and the dashboard).
 Paper trading only; the MT5 terminal must be open for NAS100 prices.

@@ -70,7 +70,7 @@ nas100-control-center/
 - Backtest splits fixed in advance: dev 2019–2022, validation 2023–2024, OOS 2025+ (run ONCE with --oos). Do not tune on OOS.
 - [x] Day 4: paper execution. `core/fills.py` (shared fill rules), `core/paper_broker.py`, `core/engine.py` (cycle), `core/live_loop.py` (MT5 every 20 s when ENGINE_ENABLED=true), `core/state.py` (persisted kill_switch / auto_trading / active_strategy), `api_trading.py` (overview, signals, orders, positions, events, controls). 76 tests pass. Live check on MT5 demo OK.
 - [x] Day 5: React + Vite + Tailwind + lightweight-charts dashboard in `frontend/` (header with PAPER badge, data source + stale flag, strategy select, auto-trading, kill switch; overview tiles; NY-time chart with EMA20/50 (15m), VWAP, PDH/PDL/ONH/ONL, FVG markers; signal + risk panel; journal tabs). `GET /api/market/analysis`. 80 backend tests pass; checked in browser with live MT5 demo data.
-- [x] Day 6 (partial): paper metrics `/api/journal/metrics` + Metrics tab, Markdown backtest report, prior-day-level fix. FULL BACKTEST STILL PENDING (download).
+- [x] Day 6 (partial): paper metrics `/api/journal/metrics` + Metrics tab, Markdown backtest report, prior-day-level fix. Full backtest done 2026-11-14 (see below).
 - [x] Day 7: `scripts/replay_day.py` (full-day replay through the real engine), failure-injection tests (`tests/test_reliability.py`), NumPy-bytes bug fix, engine performance fix, `.claude/` skills (risk-audit, backtest-review, teach-step) + protect_files hook, `docs/review_day7.md`. 89 tests pass.
 - [x] London variants (owner approved 2026-11-13): `london_trend_fvg`, `london_sweep_mss_fvg`; features `lmod` (London clock), `lvwap`, Asia range `ash`/`asl`; positions may be held 03:00-15:55 NY. 95 tests pass. 2019 smoke run: both London variants negative so far (not conclusive).
 - [x] Weekend BTC book (owner approved 2026-11-13, Binance public data): `core/markets.py` (NAS100 + BTCUSD books, holding windows, costs), `sources/binance_source.py`, `backfill.py binance`, BTC loop in `live_loop.py`, broker scoped per book (shared account), `btc_weekend_trend_fvg`, `run_backtest.py --market btc`, dashboard NAS100/BTC toggle + 'Trading now'. 105 tests pass.
@@ -83,10 +83,11 @@ nas100-control-center/
 - [x] FULL BACKTEST 2019-2024: no NAS100 strategy is positive in both dev and validation; all NOT robust; cost filter does not fix it. OOS (2025+) NOT run - nothing qualifies. 138 tests pass.
 - [x] Daily trend research (pre-registered `docs/daily_trend_preregistration.md`; `app/backtest/daily_trend.py`, `scripts/daily_trend_test.py`): sma100_long and donchian_55_20 both FAIL (do not beat random-timing control; 8-27 trades per split). 142 tests pass.
 - Owner direction 2026-11-14: keep the project as a learning lab; paper engine keeps running ORB; no real money.
-- [ ] Next (old plan, superseded by the result above): finish download → run backtest → review → choose strategy (see docs/review_day7.md §5–6)
+- [x] Dashboard shows the real backtest verdict per strategy; `docs/lessons.md` ("What we learned", plain English).
+- [ ] Next: run the paper engine 2-4 weeks and compare paper results with the backtest (daily report). Only then, if wanted, ONE new idea of a different kind, pre-registered like `docs/daily_trend_preregistration.md`. Do not keep testing more chart-pattern variants (multiple-testing risk).
+- NAS100 history for backtests = HistData (`--data histdata`). The Dukascopy download is stopped and no longer needed.
 - Data facts: MT5 times = server time (Europe/Athens for MetaQuotes-Demo). Dukascopy month in URL is 0-based, price ÷1000.
 
 ## 12. Pending decisions
-- Confirm USTEC contract size / min lot / spread from `scripts/check_mt5.py`.
-- How much M1 history MT5 provides (fallback: Dukascopy).
-- Full Dukascopy backfill 2019→2026 (~1 hour download) before Day 6.
+- None open. Settled: MetaQuotes-Demo USTEC min lot 0.1 = $0.10/pt, spread ~1 pt (2026-11-13); MT5 keeps ~60 days of M1, so history comes from HistData 2019-2024.
+- Exness' real USTEC spread and swap are still unchecked (only matters before any live use, which is not planned).
