@@ -85,6 +85,8 @@ nas100-control-center/
 - Owner direction 2026-11-14: keep the project as a learning lab; paper engine keeps running ORB; no real money.
 - [x] Dashboard shows the real backtest verdict per strategy; `docs/lessons.md` ("What we learned", plain English).
 - [x] Intraday momentum research (pre-registered `docs/intraday_momentum_preregistration.md`; `app/backtest/intraday_momentum.py`, `scripts/intraday_momentum_test.py`): FAILS (~0R before costs, 1,338 trades). 147 tests pass.
+- [x] 3-market signals-only scanner (owner request 2026-11-14; rules `docs/gold_and_scanner_preregistration.md`): `core/scanner.py`, `api_scanner.py`, `ScannerPanel.jsx`, `scanner_signals` tracker. Shows a signal ONLY from a strategy in `scanner.QUALIFIED` (passed dev + validation on that market); none qualify, so it shows WAIT. Never places orders. Gold: HistData XAUUSD 2019-2024 + read-only MT5 XAUUSD; all 7 strategies fail on gold (`docs/gold_report.md`).
+- Rule: add a strategy to `scanner.QUALIFIED` ONLY after it passes a pre-registered dev + validation test. Never to "make the scanner show something".
 - [ ] Next: run the paper engine 2-4 weeks and compare paper results with the backtest (daily report). Only then, if wanted, ONE new idea of a different kind, pre-registered like `docs/daily_trend_preregistration.md`. Do not keep testing more chart-pattern variants (multiple-testing risk).
 - NAS100 history for backtests = HistData (`--data histdata`). The Dukascopy download is stopped and no longer needed.
 - Data facts: MT5 times = server time (Europe/Athens for MetaQuotes-Demo). Dukascopy month in URL is 0-based, price ÷1000.

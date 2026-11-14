@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./data/app.db"
     mt5_symbol: str = "USTEC"
+    mt5_gold_symbol: str = "XAUUSD"     # read-only, for the signals-only scanner
     mt5_terminal_path: str | None = None
     # MT5 bar times are in the broker's server time zone (an IANA name).
     # MetaQuotes-Demo: Europe/Athens (UTC+2 winter / UTC+3 summer). Exness: check with check_mt5.py.

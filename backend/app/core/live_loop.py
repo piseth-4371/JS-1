@@ -49,6 +49,41 @@ def _btc_history() -> None:
     save_bars(bn.fetch_m1(end - timedelta(days=HISTORY_DAYS + 1), end))
 
 
+def _pull_gold(days: float = 3 / 24) -> None:
+    """Gold bars for the signals-only scanner (read-only MT5 demo data; nothing is traded)."""
+    s = get_settings()
+    end = datetime.now(timezone.utc)
+    bars, _ = fetch_mt5_m1(s.mt5_gold_symbol, end - timedelta(days=days), end, s.mt5_server_tz, s.mt5_terminal_path)
+    save_bars(bars, update_existing=True)
+
+
+async def scanner_forever() -> None:
+    """Every 20 s: refresh gold bars, then run the 3-market signals-only scanner."""
+    from sqlalchemy.orm import Session
+
+    from app.core import scanner
+    from app.db import get_engine
+
+    try:
+        await asyncio.to_thread(_pull_gold, HISTORY_DAYS + 1)
+    except Exception as e:                   # MT5 closed, or symbol missing: the scanner reports it per market
+        log.warning("gold history: %s", e)
+    while True:
+        try:
+            await asyncio.to_thread(_pull_gold)
+        except Exception as e:
+            log.warning("gold bars: %s", e)
+        try:
+            def _scan():
+                with Session(get_engine()) as s, s.begin():
+                    return scanner.run_scan(s)
+            res = await asyncio.to_thread(_scan)
+            log.info("scanner: %s", res["note"])
+        except Exception:
+            log.exception("scanner cycle failed")
+        await asyncio.sleep(INTERVAL)
+
+
 async def run_forever(engine: TradingEngine, pull: Callable[[], str] | None = None,
                       prepare: Callable[[], None] | None = None) -> None:
     pull = pull or _pull_bars                  # looked up at call time (tests replace it)

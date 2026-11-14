@@ -27,6 +27,7 @@ from app.core.market_data import Bar
 
 SOURCE = "histdata"
 INSTRUMENT = "NSXUSD"
+GOLD = "XAUUSD"           # same provider, same clock (checked 2026-11-14 on the 2019 file)
 LONDON = ZoneInfo("Europe/London")
 
 
@@ -38,7 +39,7 @@ def file_time_to_utc(t: datetime) -> int:
     return int(guess.timestamp())
 
 
-def parse_line(line: str) -> Bar | None:
+def parse_line(line: str, instrument: str = INSTRUMENT) -> Bar | None:
     line = line.strip()
     if not line:
         return None
@@ -53,19 +54,19 @@ def parse_line(line: str) -> Bar | None:
     ts = file_time_to_utc(t)
     o, h, lo, c = (float(x) for x in parts[1:5])
     vol = float(parts[5]) if len(parts) > 5 and parts[5].strip() else 0.0
-    return Bar(SOURCE, INSTRUMENT, "M1", ts, o, h, lo, c, vol)
+    return Bar(SOURCE, instrument, "M1", ts, o, h, lo, c, vol)
 
 
-def parse_text(text: str) -> list[Bar]:
+def parse_text(text: str, instrument: str = INSTRUMENT) -> list[Bar]:
     """Parse a file; minutes that appear twice (clock switch) are dropped entirely - we cannot tell which is right."""
-    bars = [b for b in (parse_line(x) for x in text.splitlines()) if b is not None]
+    bars = [b for b in (parse_line(x, instrument) for x in text.splitlines()) if b is not None]
     seen = Counter(b.ts for b in bars)
     bars = [b for b in bars if seen[b.ts] == 1]
     bars.sort(key=lambda b: b.ts)
     return bars
 
 
-def read_zip(path: Path) -> list[Bar]:
+def read_zip(path: Path, instrument: str = INSTRUMENT) -> list[Bar]:
     """Read the .csv data file(s) inside one HistData zip (the .txt file is their gap report)."""
     out: list[Bar] = []
     with zipfile.ZipFile(path) as z:
@@ -73,6 +74,6 @@ def read_zip(path: Path) -> list[Bar]:
             if not name.lower().endswith(".csv"):
                 continue
             with z.open(name) as f:
-                out += parse_text(io.TextIOWrapper(f, encoding="utf-8", errors="replace").read())
+                out += parse_text(io.TextIOWrapper(f, encoding="utf-8", errors="replace").read(), instrument)
     out.sort(key=lambda b: b.ts)
     return out

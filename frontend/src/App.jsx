@@ -4,6 +4,7 @@ import Chart from "./components/Chart.jsx";
 import Header from "./components/Header.jsx";
 import Journal from "./components/Journal.jsx";
 import Overview from "./components/Overview.jsx";
+import ScannerPanel from "./components/ScannerPanel.jsx";
 import SignalPanel from "./components/SignalPanel.jsx";
 
 const POLL_MS = 5000; // closed-bar analysis and dashboard panels
@@ -22,6 +23,7 @@ export default function App() {
   const [positions, setPositions] = useState([]);
   const [events, setEvents] = useState([]);
   const [metrics, setMetrics] = useState(null);
+  const [scan, setScan] = useState(null);
   const [error, setError] = useState(null);
   const [backendDown, setBackendDown] = useState(false);
   const [marketError, setMarketError] = useState(null);
@@ -40,13 +42,14 @@ export default function App() {
     if (panelsRequest.current) return;
     panelsRequest.current = true;
     try {
-      const [o, s, ord, p, e, mt] = await Promise.allSettled([
+      const [o, s, ord, p, e, mt, sc] = await Promise.allSettled([
         getJSON("/api/overview"),
         getJSON("/api/signals?limit=100"),
         getJSON("/api/orders?limit=100"),
         getJSON("/api/positions?limit=200"),
         getJSON("/api/events?limit=200"),
         getJSON("/api/journal/metrics"),
+        getJSON("/api/scanner"),
       ]);
       if (o.status === "fulfilled") { setOv(o.value); setBackendDown(false); }
       else setBackendDown(true);
@@ -55,6 +58,7 @@ export default function App() {
       if (p.status === "fulfilled") setPositions(p.value);
       if (e.status === "fulfilled") setEvents(e.value);
       if (mt.status === "fulfilled") setMetrics(mt.value);
+      if (sc.status === "fulfilled") setScan(sc.value);
     } finally {
       panelsRequest.current = false;
     }
@@ -156,6 +160,7 @@ export default function App() {
             KILL SWITCH IS ON: all trading is blocked. Orders were cancelled and positions closed.
           </div>
         )}
+        <ScannerPanel scan={scan} />
         <Overview ov={ov} />
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2"><Chart market={market} preview={preview} previewError={previewError} marketError={marketError} view={view} /></div>

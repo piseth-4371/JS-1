@@ -23,15 +23,18 @@ DEFAULT_DIR = Path(__file__).resolve().parent.parent / "data" / "histdata"
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("folder", nargs="?", type=Path, default=DEFAULT_DIR)
+    p.add_argument("folder", nargs="?", type=Path, default=None)
+    p.add_argument("--pair", default="nsxusd", help="nsxusd (Nasdaq-100) or xauusd (gold)")
     a = p.parse_args()
+    inst = a.pair.upper()
+    a.folder = a.folder or (DEFAULT_DIR if a.pair == "nsxusd" else DEFAULT_DIR / a.pair)
     zips = sorted(a.folder.glob("*.zip"))
     if not zips:
         print(f"No .zip files in {a.folder}")
         return 1
     init_db()
     for z in zips:
-        bars = hd.read_zip(z)
+        bars = hd.read_zip(z, inst)
         dropped = sum(b.ts >= OOS_START for b in bars)
         bars = [b for b in bars if b.ts < OOS_START]
         rep = validate_bars(bars)
@@ -43,9 +46,9 @@ def main() -> int:
         last = datetime.fromtimestamp(bars[-1].ts, timezone.utc) if bars else None
         print(f"{z.name}: {len(bars):,} bars saved ({first:%Y-%m-%d} -> {last:%Y-%m-%d} UTC)"
               + (f"; {dropped:,} bars from 2025+ skipped (locked)" if dropped else ""))
-    n, first, last = count_bars(hd.SOURCE, hd.INSTRUMENT)
+    n, first, last = count_bars(hd.SOURCE, inst)
     fmt = lambda t: datetime.fromtimestamp(t, timezone.utc).strftime("%Y-%m-%d %H:%M UTC") if t else "-"  # noqa: E731
-    print(f"Database now has {n:,} {hd.INSTRUMENT} M1 bars from {hd.SOURCE}: {fmt(first)} -> {fmt(last)}")
+    print(f"Database now has {n:,} {inst} M1 bars from {hd.SOURCE}: {fmt(first)} -> {fmt(last)}")
     return 0
 
 

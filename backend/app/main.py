@@ -11,6 +11,7 @@ from typing import Literal
 from fastapi import FastAPI, Query
 
 from app.api_market import router as market_router
+from app.api_scanner import router as scanner_router
 from app.api_trading import router as trading_router
 from app.config import get_settings
 from app.core.market_data import is_stale, resample
@@ -25,7 +26,7 @@ async def lifespan(_: FastAPI):
     s = get_settings()
     if s.engine_enabled:
         from app.core.engine import TradingEngine
-        from app.core.live_loop import _btc_history, _pull_btc, run_forever
+        from app.core.live_loop import _btc_history, _pull_btc, run_forever, scanner_forever
         from app.core.markets import BTCUSD
         from app.core.sources import binance_source as bn
 
@@ -34,6 +35,7 @@ async def lifespan(_: FastAPI):
         if s.btc_weekend_enabled:
             btc = TradingEngine(bn.SOURCE, bn.SYMBOL, s.starting_balance, market=BTCUSD)
             tasks.append(asyncio.create_task(run_forever(btc, _pull_btc, _btc_history)))
+        tasks.append(asyncio.create_task(scanner_forever()))      # signals only, never trades
     yield
     for task in tasks:
         task.cancel()
@@ -42,6 +44,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="LITTLE", version="0.5.0", lifespan=lifespan)
 app.include_router(trading_router)
 app.include_router(market_router)
+app.include_router(scanner_router)
 
 
 @app.get("/api/health")

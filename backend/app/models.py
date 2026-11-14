@@ -59,6 +59,33 @@ class SignalRow(Base):
     risk_qty: Mapped[float | None] = mapped_column(Float)
 
 
+class ScannerSignalRow(Base):
+    """Signals-only scanner record (no order is ever placed). Outcome filled in later from real prices."""
+    __tablename__ = "scanner_signals"
+    __table_args__ = (UniqueConstraint("market", "strategy", "bar_close_ts", name="uq_scanner_signal"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    market: Mapped[str] = mapped_column(String(10))            # nas100 / btc / gold
+    strategy: Mapped[str] = mapped_column(String(40))
+    bar_close_ts: Mapped[int] = mapped_column(BigInteger, index=True)
+    created_ts: Mapped[int] = mapped_column(BigInteger)
+    side: Mapped[int] = mapped_column(Integer)                 # +1 long, -1 short
+    kind: Mapped[str] = mapped_column(String(10))
+    entry: Mapped[float] = mapped_column(Float)
+    stop: Mapped[float] = mapped_column(Float)
+    target: Mapped[float | None] = mapped_column(Float)
+    rr_target: Mapped[float] = mapped_column(Float)
+    expiry_ts: Mapped[int] = mapped_column(BigInteger)
+    cost_r: Mapped[float] = mapped_column(Float)               # trading cost in R
+    qualified: Mapped[bool] = mapped_column(Boolean)           # strategy passed dev + validation on this market
+    shown: Mapped[bool] = mapped_column(Boolean)               # was THE signal shown (not practice-only)
+    reason: Mapped[str] = mapped_column(Text, default="")
+    data_source: Mapped[str] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(12), default="open")   # open / filled / target / stop / expired / session_end
+    filled_ts: Mapped[int | None] = mapped_column(BigInteger)
+    resolved_ts: Mapped[int | None] = mapped_column(BigInteger)
+    r: Mapped[float | None] = mapped_column(Float)
+
+
 class OrderRow(Base):
     __tablename__ = "orders"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
