@@ -93,6 +93,7 @@ and it produces strategies that only work on the past.
 | NAS100 intraday + cost filter | 7 | Fewer losses, still no winner |
 | BTC weekend intraday | 5 | All fail (fees) |
 | NAS100 daily trend (pre-registered) | 2 | Both fail (do not beat random timing; too few trades) |
+| NAS100 intraday momentum (published research, pre-registered) | 1 | Fails: about 0R even before costs (1,338 trades) |
 
 ## What this means for you
 
