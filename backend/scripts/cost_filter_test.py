@@ -4,7 +4,7 @@ Rule fixed in advance: skip a trade when 2.0 points of cost > 20% of its risk (s
 Development 2019-2022 and validation 2023-2024 only; 2025+ stays locked.
 A real improvement must hold in BOTH splits. Writes docs/cost_filter_report.md.
 
-  .\\.venv\\Scripts\\python scripts\\cost_filter_test.py [histdata]
+  .\\.venv\\Scripts\\python scripts\\cost_filter_test.py [dukascopy]
 """
 import sys
 from datetime import date, datetime, timezone
@@ -40,7 +40,7 @@ def stats(rs):
 
 
 def main() -> int:
-    src = hd if "--data=histdata" in sys.argv or "histdata" in sys.argv[1:] else dk
+    src = dk if "dukascopy" in sys.argv[1:] else hd       # HistData (full 2019-2024) unless asked
     init_db()
     m1 = load_m1(src.SOURCE, src.INSTRUMENT, ts(date(2019, 1, 1)), ts(date(2025, 1, 1)))
     if m1.empty:

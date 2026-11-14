@@ -1,4 +1,4 @@
-"""Run all strategies on Dukascopy history and print a comparison.
+"""Run all strategies on NAS100 history (HistData by default) and print a comparison.
 
 Splits (decided BEFORE looking at results):
   development  2019-01-01 .. 2022-12-31
@@ -49,7 +49,8 @@ def main() -> int:
     p.add_argument("--spread", type=float, default=1.5)
     p.add_argument("--slippage", type=float, default=0.5)
     p.add_argument("--market", choices=["nas100", "btc"], default="nas100")
-    p.add_argument("--data", choices=["dukascopy", "histdata"], default="dukascopy", help="NAS100 history source")
+    p.add_argument("--data", choices=["dukascopy", "histdata"], default="histdata",
+                   help="NAS100 history source (histdata = full 2019-2024; dukascopy = only 2019-01..2020-08)")
     p.add_argument("--fee-pct", type=float, default=None, help="BTC: round-trip fee %% of price (default 0.10)")
     a = p.parse_args()
     mk = BTCUSD if a.market == "btc" else NAS100

@@ -45,7 +45,8 @@ def avg(rs):
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--market", choices=["nas100", "btc"], default="nas100")
-    p.add_argument("--data", choices=["dukascopy", "histdata"], default="dukascopy", help="NAS100 history source")
+    p.add_argument("--data", choices=["dukascopy", "histdata"], default="histdata",
+                   help="NAS100 history source (histdata = full 2019-2024; dukascopy = only 2019-01..2020-08)")
     p.add_argument("--strategies", default="", help="comma list; default = every strategy of the market")
     p.add_argument("--start", type=date.fromisoformat, default=date(2019, 1, 1))
     p.add_argument("--end", type=date.fromisoformat, default=date(2025, 1, 1))

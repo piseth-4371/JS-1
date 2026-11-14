@@ -12,7 +12,14 @@ Success = rules followed, zero risk violations, reproducible backtest, working k
 - Weekend book: BTCUSDT from **Binance public market data** (no account, no key). Paper only; never send orders to Binance.
 - Frontend (Day 5): React + Vite + Tailwind + lightweight-charts
 
-## 3. Strategy — "NY Trend-FVG v1" (frozen until backtest review)
+## 3. Current mode — learning lab (since 2026-11-14)
+- Every strategy tested so far FAILS its pre-registered dev (2019–2022) + validation (2023–2024) test: 7 NAS100, 5 BTC, 2 daily trend, 1 intraday momentum, 7 gold. Scoreboard: `docs/lessons.md`. The 2025+ out-of-sample test has never been run (nothing qualifies).
+- The paper engine still runs ORB on the demo feed for learning only. It is not expected to make money.
+- The 3-market scanner (NAS100, BTC, gold) is signals-only and shows **WAIT** unless a strategy is in `scanner.QUALIFIED`, which is empty. Never add one there without a passing pre-registered test. Never describe a signal as a % chance of winning.
+- Backtest history: HistData.com M1 (NSXUSD for NAS100, XAUUSD for gold) is the default `--data` source; Binance for BTC.
+- New ideas = research variants with a pre-registration doc written BEFORE the test. Core rules below stay as they are.
+
+## 3a. Original strategy — "NY Trend-FVG v1" (tested 2026-11-14: fails, kept for reference)
 Times America/New_York. Closed bars only.
 - Bias 15m: close > EMA50 and EMA20 > EMA50 → long (mirror short); else WAIT.
 - Entries 09:45–11:30 only; flat by 15:55.
@@ -88,7 +95,8 @@ nas100-control-center/
 - [x] 3-market signals-only scanner (owner request 2026-11-14; rules `docs/gold_and_scanner_preregistration.md`): `core/scanner.py`, `api_scanner.py`, `ScannerPanel.jsx`, `scanner_signals` tracker. Shows a signal ONLY from a strategy in `scanner.QUALIFIED` (passed dev + validation on that market); none qualify, so it shows WAIT. Never places orders. Gold: HistData XAUUSD 2019-2024 + read-only MT5 XAUUSD; all 7 strategies fail on gold (`docs/gold_report.md`).
 - Rule: add a strategy to `scanner.QUALIFIED` ONLY after it passes a pre-registered dev + validation test. Never to "make the scanner show something".
 - [ ] Next: run the paper engine 2-4 weeks and compare paper results with the backtest (daily report). Only then, if wanted, ONE new idea of a different kind, pre-registered like `docs/daily_trend_preregistration.md`. Do not keep testing more chart-pattern variants (multiple-testing risk).
-- NAS100 history for backtests = HistData (`--data histdata`). The Dukascopy download is stopped and no longer needed.
+- [x] Scanner fill model v2 (`ScannerExecutionRow` = fill-model version, costs used, fill/exit prices; older rows counted as "legacy" and kept out of stats), read-only spread observations (`scripts/measure_scanner_spreads.py`). Backtest scripts default to HistData. 163 tests pass.
+- NAS100 history for backtests = HistData (default; `--data dukascopy` / `dukascopy` arg only for the old 2019-2020 partial set). The Dukascopy download is stopped and no longer needed.
 - Data facts: MT5 times = server time (Europe/Athens for MetaQuotes-Demo). Dukascopy month in URL is 0-based, price ÷1000.
 
 ## 12. Pending decisions
