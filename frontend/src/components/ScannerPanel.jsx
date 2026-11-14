@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { num, nyTime } from "../api.js";
 import { strategyLabel } from "../strategies.js";
 
@@ -24,7 +24,14 @@ function Levels({ s }) {
 
 export default function ScannerPanel({ scan }) {
   const [showPractice, setShowPractice] = useState(false);
+  const [now, setNow] = useState(() => Date.now() / 1000);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now() / 1000), 1000);
+    return () => clearInterval(timer);
+  }, []);
   if (!scan) return <div className="card text-sm text-slate-400">Scanner: loading…</div>;
+  const freshSignal = scan.signal && now < scan.signal.expiry_ts
+    && now - (scan.scanned_ts ?? 0) <= 60;
   const practice = (scan.markets ?? []).flatMap((m) => m.setups.filter((s) => !s.eligible));
   const tr = scan.track_record ?? {};
   return (
@@ -32,18 +39,18 @@ export default function ScannerPanel({ scan }) {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className="label">3-market scanner · signals only (no orders)</div>
-          {scan.signal ? (
+          {freshSignal ? (
             <div className="mt-1 text-lg font-semibold text-sky-200">
               {MARKET_NAME[scan.signal.market]} · {strategyLabel(scan.signal.strategy)} · <Levels s={scan.signal} />
             </div>
           ) : (
             <div className="mt-1 text-2xl font-bold text-slate-200">WAIT</div>
           )}
-          <div className="mt-1 max-w-3xl text-sm text-slate-300">{scan.note}</div>
-          {scan.signal && (
+          <div className="mt-1 max-w-3xl text-sm text-slate-300">{scan.signal && !freshSignal ? "WAIT: signal expired or scanner updates stopped." : scan.note}</div>
+          {freshSignal && (
             <div className="mt-1 text-xs text-slate-400">
               Expires {nyTime(scan.signal.expiry_ts)} NY · cost {(scan.signal.cost_share * 100).toFixed(0)}% of risk ·
-              ranking uses past validation results and is NOT a chance of winning.
+              {scan.signal.cost_basis} · ranking uses past validation results and is NOT a chance of winning.
             </div>
           )}
         </div>
@@ -76,11 +83,53 @@ export default function ScannerPanel({ scan }) {
           </button>
         )}
       </div>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-left text-xs">
+          <caption className="pb-2 text-left text-slate-300">Forward simulation · completed trades only</caption>
+          <thead className="text-slate-400"><tr>
+            <th className="p-2">Market / group</th><th className="p-2">Completed</th>
+            <th className="p-2">Win rate / 95% range</th><th className="p-2">Avg net R / 95% range</th>
+            <th className="p-2">Pending / expired / invalid</th>
+          </tr></thead>
+          <tbody>{(tr.by_market ?? []).flatMap((m) => ["shown", "practice"].map((group) => {
+            const stats = m[group];
+            const range = (value, unit = "") => value ? `${value[0]}–${value[1]}${unit}` : "—";
+            return <tr key={`${m.market}-${group}`} className="border-t border-slate-700/50">
+              <td className="p-2">{MARKET_NAME[m.market]} · {group === "shown" ? "qualified signals" : "practice only"}</td>
+              <td className="p-2">{stats.resolved}</td>
+              <td className="p-2">{stats.win_rate == null ? "—" : `${stats.win_rate}%`} / {range(stats.win_rate_95_range, "%")}</td>
+              <td className="p-2">{stats.avg_r == null ? "—" : `${stats.avg_r}R`} / {range(stats.avg_r_95_range, "R")}</td>
+              <td className="p-2">{stats.pending} / {stats.expired} / {stats.invalid}</td>
+            </tr>;
+          }))}</tbody>
+        </table>
+      </div>
+      {tr.legacy_excluded > 0 && <p className="mt-2 text-xs text-amber-200">
+        {tr.legacy_excluded} older records excluded: they used a different fill model.
+      </p>}
+      <details className="mt-3 text-xs text-slate-400">
+        <summary className="cursor-pointer">Cost assumptions and observed spreads</summary>
+        <div className="mt-2 grid gap-2 sm:grid-cols-3">{(scan.costs ?? []).map((c) => (
+          <div key={c.market} className="rounded bg-slate-800/60 p-2">
+            <div className="font-semibold text-slate-200">{MARKET_NAME[c.market]}</div>
+            <div>Assumed spread: {c.assumptions.spread} points; round-trip fees: {c.assumptions.fee_pct}%.</div>
+            <div>Assumed slippage per applicable leg: {c.assumptions.slippage} points + {c.assumptions.slip_pct}%.</div>
+            {c.observation ? <>
+              <div className="mt-1">Observed spread: {num(c.observation.median_spread, 4)} {c.observation.unit}
+                {c.observation.p90_spread != null && ` · p90 ${num(c.observation.p90_spread, 4)}`}.</div>
+              <div>{c.observation.sample_count} samples · {c.observation.kind}</div>
+              <div>{c.observation.source} · collected {new Date(c.observation.observed_ts * 1000).toLocaleString()}</div>
+              {c.observation.last_quote_ts && <div>Last bar {new Date(c.observation.last_quote_ts * 1000).toLocaleString()}</div>}
+            </> : <div className="mt-1 text-amber-200">No spread observations collected.</div>}
+            <div className="mt-1">{c.note}</div>
+          </div>
+        ))}</div>
+      </details>
       {showPractice && (
         <ul className="mt-2 space-y-1 text-xs text-amber-200/90">
           {practice.map((s) => (
             <li key={`${s.market}-${s.strategy}-${s.bar_close_ts}`}>
-              PRACTICE ONLY ({s.qualified ? "blocked by news/cost check" : "this strategy failed its backtest"}):{" "}
+              PRACTICE ONLY ({s.qualified ? "blocked by eligibility checks" : "this strategy failed its backtest"}):{" "}
               {MARKET_NAME[s.market]} · {strategyLabel(s.strategy)} · <Levels s={s} />
             </li>
           ))}

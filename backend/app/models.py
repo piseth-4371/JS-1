@@ -4,7 +4,7 @@ Timestamps are stored as integer UTC epoch seconds (`ts`): unambiguous,
 time-zone safe, and identical in SQLite and PostgreSQL.
 """
 from sqlalchemy import JSON, BigInteger, Boolean, Float, ForeignKey, Integer, String, Text, UniqueConstraint
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
@@ -84,6 +84,23 @@ class ScannerSignalRow(Base):
     filled_ts: Mapped[int | None] = mapped_column(BigInteger)
     resolved_ts: Mapped[int | None] = mapped_column(BigInteger)
     r: Mapped[float | None] = mapped_column(Float)
+    # Fill model v2 (shared fill rules + recorded costs). Rows without it are "legacy" (first fill model):
+    # kept for history, never mixed into the new statistics. Loaded with the row (selectin) so the API
+    # can read it after its session closes.
+    execution: Mapped["ScannerExecutionRow | None"] = relationship(
+        back_populates="signal", uselist=False, cascade="all, delete-orphan", lazy="selectin")
+
+
+class ScannerExecutionRow(Base):
+    """How a scanner signal was simulated: fill-model version, the costs used, and the actual fill/exit prices."""
+    __tablename__ = "scanner_executions"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    signal_id: Mapped[int] = mapped_column(ForeignKey("scanner_signals.id"), unique=True, index=True)
+    version: Mapped[int] = mapped_column(Integer)
+    costs: Mapped[dict] = mapped_column(JSON, default=dict)          # e.g. {"spread": 1.5, "slippage": 0.5, ...}
+    fill_price: Mapped[float | None] = mapped_column(Float)
+    exit_price: Mapped[float | None] = mapped_column(Float)
+    signal: Mapped[ScannerSignalRow] = relationship(back_populates="execution")
 
 
 class OrderRow(Base):

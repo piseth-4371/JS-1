@@ -12,7 +12,7 @@ A rank is never a probability of winning.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Callable
 from zoneinfo import ZoneInfo
@@ -23,10 +23,12 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.core.features import build_frame, load_m1
+from app.core.fills import Costs, try_fill, check_exit, net_points
+from app.core import news
 from app.core.markets import btc_weekend_mask, nas_hold_mask
 from app.core.sources import binance_source as bn
 from app.core.strategies import ALL
-from app.models import ScannerSignalRow
+from app.models import ScannerSignalRow, ScannerExecutionRow
 
 NY = ZoneInfo("America/New_York")
 HISTORY_DAYS = 30
@@ -39,6 +41,16 @@ BTC_STRATEGIES = [n for n in ALL if n.startswith("btc_")]
 # (market, strategy) -> validation avg R. ONLY strategies that passed development AND validation on that
 # market under the pre-registered rules. As of 2026-11-14 nothing has passed (see docs/lessons.md).
 QUALIFIED: dict[tuple[str, str], float] = {}
+COSTS = {
+    "nas100": Costs(spread=1.5, slippage=0.5),
+    "gold": Costs(spread=0.30, slippage=0.10),
+    "btc": Costs(spread=0, slippage=0, fee_pct=0.10, slip_pct=0.02),
+}
+
+
+def estimated_cost(market: str, price: float, kind: str) -> float:
+    # Conservative stop-exit estimate: both entry and exit slippage where applicable.
+    return -net_points(1, price, price, kind, "stop", COSTS[market])
 
 
 @dataclass(frozen=True)
@@ -85,10 +97,13 @@ class Setup:
     cost_share: float
     qualified: bool
     news_blackout: bool
+    news_known: bool = True
+    expired: bool = False
 
     @property
     def eligible(self) -> bool:
-        return self.qualified and not self.news_blackout and self.cost_share <= MAX_COST_SHARE
+        return (self.qualified and self.news_known and not self.expired
+                and not self.news_blackout and self.cost_share <= MAX_COST_SHARE)
 
 
 @dataclass
@@ -103,7 +118,7 @@ class MarketStatus:
 
 def pick(setups: list[Setup]) -> Setup | None:
     """The ONE signal to show: eligible setups only; highest validation avg R, then lowest cost share."""
-    ok = [x for x in setups if x.eligible]
+    ok = [x for x in setups if x.eligible and (x.market, x.strategy) in QUALIFIED]
     if not ok:
         return None
     return sorted(ok, key=lambda x: (-QUALIFIED.get((x.market, x.strategy), 0.0), x.cost_share))[0]
@@ -145,9 +160,12 @@ def scan_market(m: ScanMarket, now: int) -> MarketStatus:
         if risk <= 0:
             continue
         st.setups.append(Setup(m.key, name, order.side, order.kind, float(order.entry), float(order.stop),
-                               None if order.target is None else float(order.target), float(order.rr_target),
+                               float(order.target if order.target is not None else order.entry + order.side * order.rr_target * risk), float(order.rr_target),
                                int(order.expiry_ts), int(a["close_ts"][i]), order.reason,
-                               m.cost(order.entry) / risk, (m.key, name) in QUALIFIED, bool(a["news"][i])))
+                               estimated_cost(m.key, order.entry, order.kind) / risk, (m.key, name) in QUALIFIED,
+                               bool(a["news"][i]) or news.blackout_event(now) is not None,
+                               bool(a["news_known"][i]) and news.covered(now),
+                               now >= order.expiry_ts))
     st.detail = f"{len(st.setups)} setup(s) on the {datetime.fromtimestamp(int(a['close_ts'][i]), NY):%H:%M} NY bar"
     return st
 
@@ -164,45 +182,62 @@ def record(s: Session, statuses: list[MarketStatus], chosen: Setup | None, now: 
                                    side=x.side, kind=x.kind, entry=x.entry, stop=x.stop, target=x.target,
                                    rr_target=x.rr_target, expiry_ts=x.expiry_ts, cost_r=x.cost_share,
                                    qualified=x.qualified, shown=x is chosen, reason=x.reason,
-                                   data_source=sources[x.market]))
+                                   data_source=sources[x.market],
+                                   execution=ScannerExecutionRow(version=2, costs=asdict(COSTS[x.market]))))
 
 
 def resolve(row: ScannerSignalRow, m1, window: Callable, now: int) -> None:
     """Fill in what really happened, from closed 1-minute bars after the signal. Pessimistic: if a bar touches
     both stop and target, the stop counts. Unfilled at expiry -> 'expired'. Window end -> 'session_end'."""
-    side, entry, stop = row.side, row.entry, row.stop
-    risk = abs(entry - stop)
-    target = row.target if row.target is not None else entry + side * row.rr_target * risk
+    execution = row.execution
+    if execution is None:  # Preserve old results; exclude their different fill model from new statistics.
+        return
+    side, stop = row.side, row.stop
+    planned_risk = (row.entry - stop) * side
+    if planned_risk <= 0:
+        row.status, row.resolved_ts = "invalid", now
+        return
+    target = row.target if row.target is not None else row.entry + side * row.rr_target * planned_risk
+    costs = Costs(**execution.costs)
     filled = row.status == "filled"
-    for b in m1.itertuples():
+    # Never credit a fill before the scanner actually published the setup.
+    active_from = max(row.bar_close_ts, ((row.created_ts + 59) // 60) * 60)
+
+    def finish(price: float, reason: str, t: int) -> None:
+        execution.exit_price = float(price)
+        row.status, row.resolved_ts = reason, t
+        row.r = net_points(side, execution.fill_price, price, row.kind, reason, costs) / planned_risk
+
+    for b in m1.sort_values("ts").itertuples():
         t = int(b.ts)
-        if t < row.bar_close_ts or (row.filled_ts and t < row.filled_ts):
+        if t < active_from or t + 60 > now or (row.filled_ts and t < row.filled_ts):
             continue
         d = datetime.fromtimestamp(t, NY)
-        if not window(np.array([d.hour * 60 + d.minute]), np.array([d.weekday()]))[0]:
+        can_hold = window(np.array([d.hour * 60 + d.minute]), np.array([d.weekday()]))[0]
+        if not can_hold:
             if filled:
-                row.status, row.resolved_ts = "session_end", t
-                row.r = (b.o - entry) * side / risk - row.cost_r
+                finish(b.o, "session_end", t)
             else:
                 row.status, row.resolved_ts = "expired", t
             return
         if not filled:
-            if t >= row.expiry_ts:
+            if t >= row.expiry_ts or news.entry_block_reason(t):
                 row.status, row.resolved_ts = "expired", t
                 return
-            hit = (row.kind == "market"
-                   or (row.kind == "limit" and (b.l <= entry if side == 1 else b.h >= entry))
-                   or (row.kind == "stop" and (b.h >= entry if side == 1 else b.l <= entry)))
-            if not hit:
+            price = try_fill(row.kind, side, row.entry, b.o, b.h, b.l)
+            if price is None:
                 continue
+            if (price - stop) * side <= 0 or (target - price) * side <= 0:
+                row.status, row.resolved_ts = "invalid", t
+                return
+            execution.fill_price = float(price)
             filled, row.status, row.filled_ts = True, "filled", t
-        if (b.l <= stop) if side == 1 else (b.h >= stop):
-            row.status, row.resolved_ts, row.r = "stop", t, -1.0 - row.cost_r
+        hit = check_exit(side, stop, target, b.o, b.h, b.l, t == row.filled_ts)
+        if hit:
+            price, reason = hit
+            finish(price, reason, t)
             return
-        if t > row.filled_ts and ((b.h >= target) if side == 1 else (b.l <= target)):
-            row.status, row.resolved_ts = "target", t
-            row.r = abs(target - entry) / risk - row.cost_r
-            return
+    # Leave unfilled rows pending until the price history reaches expiry.
 
 
 LATEST: dict = {"scanned_ts": None, "signal": None, "markets": [], "note": "scanner has not run yet"}
@@ -218,7 +253,7 @@ def run_scan(s: Session, now: int | None = None) -> dict:
     by_key = {m.key: m for m in markets}
     for row in s.scalars(select(ScannerSignalRow).where(ScannerSignalRow.status.in_(("open", "filled")))):
         m = by_key.get(row.market)
-        if m is None:
+        if m is None or row.execution is None:
             continue
         m1 = load_m1(m.source, m.symbol, row.bar_close_ts, now - 59)
         resolve(row, m1[m1["ts"] + 60 <= now], m.window, now)
@@ -243,4 +278,5 @@ def _setup_dict(x: Setup) -> dict:
     return {"market": x.market, "strategy": x.strategy, "side": "LONG" if x.side == 1 else "SHORT", "kind": x.kind,
             "entry": x.entry, "stop": x.stop, "target": x.target, "rr_target": x.rr_target, "expiry_ts": x.expiry_ts,
             "bar_close_ts": x.bar_close_ts, "reason": x.reason, "cost_share": round(x.cost_share, 3),
-            "qualified": x.qualified, "news_blackout": x.news_blackout, "eligible": x.eligible}
+            "qualified": x.qualified, "news_blackout": x.news_blackout, "eligible": x.eligible, "news_known": x.news_known, "expired": x.expired,
+            "cost_basis": "assumed costs; includes stop-exit slippage"}
