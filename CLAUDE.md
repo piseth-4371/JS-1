@@ -79,7 +79,9 @@ nas100-control-center/
 - [x] Robustness tool (`scripts/robustness.py`), daily paper report (`scripts/daily_report.py`), DB backup (`scripts/backup_db.py`), `start.ps1`, BEA GDP + PCE in the news calendar (444 events). 127 tests pass.
 - [x] BTC backtests (2019-2024): all 5 weekend strategies fail (fees 0.4-1.1R per trade, ~0R before costs). Overview speed fix. 131 tests pass.
 - [x] Cost research: real demo spread ~1 pt (keep 2.0 assumption); cost filter research wrapper (skip if cost > 20% of risk), partial dev data: mixed, not validated. 134 tests pass.
-- [ ] Next: finish download → run backtest → review → choose strategy (see docs/review_day7.md §5–6)
+- [x] 2026-11-14: NAS100 history from HistData.com NSXUSD (owner approved; `sources/histdata_source.py`, `scripts/import_histdata.py`, `scripts/compare_histdata.py`, `--data histdata` on run_backtest/robustness/cost_filter_test). Identical to Dukascopy where they overlap. Clock = UTC-4 during UK summer time, else UTC-5 (NOT fixed EST as the FAQ says). 2023 has missing hours on 110 days.
+- [x] FULL BACKTEST 2019-2024: no NAS100 strategy is positive in both dev and validation; all NOT robust; cost filter does not fix it. OOS (2025+) NOT run - nothing qualifies. 138 tests pass.
+- [ ] Next (old plan, superseded by the result above): finish download → run backtest → review → choose strategy (see docs/review_day7.md §5–6)
 - Data facts: MT5 times = server time (Europe/Athens for MetaQuotes-Demo). Dukascopy month in URL is 0-based, price ÷1000.
 
 ## 12. Pending decisions

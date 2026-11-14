@@ -27,6 +27,7 @@ from app.core.markets import BTCUSD, NAS100  # noqa: E402
 from app.core.risk import RiskSettings  # noqa: E402
 from app.core.sources import binance_source as bn  # noqa: E402
 from app.core.sources import dukascopy_source as dk  # noqa: E402
+from app.core.sources import histdata_source as hd  # noqa: E402
 from app.core.strategies import ALL  # noqa: E402
 from app.repository import init_db  # noqa: E402
 
@@ -48,10 +49,12 @@ def main() -> int:
     p.add_argument("--spread", type=float, default=1.5)
     p.add_argument("--slippage", type=float, default=0.5)
     p.add_argument("--market", choices=["nas100", "btc"], default="nas100")
+    p.add_argument("--data", choices=["dukascopy", "histdata"], default="dukascopy", help="NAS100 history source")
     p.add_argument("--fee-pct", type=float, default=None, help="BTC: round-trip fee %% of price (default 0.10)")
     a = p.parse_args()
     mk = BTCUSD if a.market == "btc" else NAS100
     src, sym, data_label = ((bn.SOURCE, bn.SYMBOL, "Binance BTCUSDT 1-minute bars (trade prices)") if a.market == "btc"
+                            else (hd.SOURCE, hd.INSTRUMENT, f"HistData.com {hd.INSTRUMENT} 1-minute BID bars") if a.data == "histdata"
                             else (dk.SOURCE, dk.INSTRUMENT, f"Dukascopy {dk.INSTRUMENT} 1-minute BID bars"))
     end = date.today() if a.oos else min(a.end, date(2025, 1, 1)) if not a.no_splits else a.end
 

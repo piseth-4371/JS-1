@@ -4,7 +4,7 @@ Rule fixed in advance: skip a trade when 2.0 points of cost > 20% of its risk (s
 Development 2019-2022 and validation 2023-2024 only; 2025+ stays locked.
 A real improvement must hold in BOTH splits. Writes docs/cost_filter_report.md.
 
-  .\\.venv\\Scripts\\python scripts\\cost_filter_test.py
+  .\\.venv\\Scripts\\python scripts\\cost_filter_test.py [histdata]
 """
 import sys
 from datetime import date, datetime, timezone
@@ -18,6 +18,7 @@ from app.backtest.robustness import bootstrap  # noqa: E402
 from app.core.features import build_frame, load_m1  # noqa: E402
 from app.core.risk import RiskSettings  # noqa: E402
 from app.core.sources import dukascopy_source as dk  # noqa: E402
+from app.core.sources import histdata_source as hd  # noqa: E402
 from app.core.strategies import ALL  # noqa: E402
 from app.repository import init_db  # noqa: E402
 
@@ -39,16 +40,17 @@ def stats(rs):
 
 
 def main() -> int:
+    src = hd if "--data=histdata" in sys.argv or "histdata" in sys.argv[1:] else dk
     init_db()
-    m1 = load_m1(dk.SOURCE, dk.INSTRUMENT, ts(date(2019, 1, 1)), ts(date(2025, 1, 1)))
+    m1 = load_m1(src.SOURCE, src.INSTRUMENT, ts(date(2019, 1, 1)), ts(date(2025, 1, 1)))
     if m1.empty:
-        print("No Dukascopy data.")
+        print(f"No {src.SOURCE} data.")
         return 1
     last = datetime.fromtimestamp(m1.ts.iloc[-1], timezone.utc).date()
     frame = build_frame(m1)
     costs, settings = Costs(), RiskSettings()
     md = [f"# Cost filter research (NAS100) — generated {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC", "",
-          f"- Data: Dukascopy {dk.INSTRUMENT} 2019-01-01 to {last} (2025+ locked)",
+          f"- Data: {src.SOURCE} {src.INSTRUMENT} 2019-01-01 to {last} (2025+ locked)",
           f"- Costs {costs.spread} spread + {costs.slippage} slippage = {costs.spread + costs.slippage} points per trade [assumption; "
           "MetaQuotes-Demo measured ~0.9-1.0 point spread on 2026-11-13]",
           "- Filter (fixed in advance): skip the trade if cost > 20% of its risk", "",
@@ -65,7 +67,7 @@ def main() -> int:
             rf = [t.r for t in filt if s0 <= t.ny_date < s1]
             nb, ab, tb, _ = stats(rb)
             nf, af, tf, pf = stats(rf)
-            row = f"| {name} | {split}{' (partial)' if last < s1 else ''} | {nb} | {ab} | {nf} | {af} | {tb} | {tf} | {pf} |"
+            row = f"| {name} | {split}{' (partial)' if (s1 - last).days > 7 else ''} | {nb} | {ab} | {nf} | {af} | {tb} | {tf} | {pf} |"
             md.append(row)
             print(row)
     md += ["", "**Reading this:** the filter only counts as an improvement if avg R improves in BOTH development and "

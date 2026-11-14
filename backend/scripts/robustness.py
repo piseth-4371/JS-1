@@ -26,6 +26,7 @@ from app.core.markets import BTCUSD, NAS100  # noqa: E402
 from app.core.risk import RiskSettings  # noqa: E402
 from app.core.sources import binance_source as bn  # noqa: E402
 from app.core.sources import dukascopy_source as dk  # noqa: E402
+from app.core.sources import histdata_source as hd  # noqa: E402
 from app.core.strategies import ALL  # noqa: E402
 from app.repository import init_db  # noqa: E402
 
@@ -44,13 +45,15 @@ def avg(rs):
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--market", choices=["nas100", "btc"], default="nas100")
+    p.add_argument("--data", choices=["dukascopy", "histdata"], default="dukascopy", help="NAS100 history source")
     p.add_argument("--strategies", default="", help="comma list; default = every strategy of the market")
     p.add_argument("--start", type=date.fromisoformat, default=date(2019, 1, 1))
     p.add_argument("--end", type=date.fromisoformat, default=date(2025, 1, 1))
     a = p.parse_args()
     end = min(a.end, date(2025, 1, 1))                      # out-of-sample stays locked
     mk = BTCUSD if a.market == "btc" else NAS100
-    src, sym = (bn.SOURCE, bn.SYMBOL) if mk is BTCUSD else (dk.SOURCE, dk.INSTRUMENT)
+    src, sym = ((bn.SOURCE, bn.SYMBOL) if mk is BTCUSD else (hd.SOURCE, hd.INSTRUMENT) if a.data == "histdata"
+                else (dk.SOURCE, dk.INSTRUMENT))
     names = [n for n in (a.strategies.split(",") if a.strategies else ALL) if n and mk.owns(n)]
 
     init_db()
