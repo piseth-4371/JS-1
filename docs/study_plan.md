@@ -18,7 +18,7 @@ and practise Python. **Not** to find a new signal.
 | Day | Book chapter | Exercise on your data | Question it answers |
 |---|---|---|---|
 | 1 | 1 Returns | `ch01_returns.py` (ready) | Biggest NAS100 daily fall 2019–2024? Why do log returns add up? |
-| 2 | 2 Present value | Interest on the $1,000 paper balance at 4% vs trading results | Is the strategy better than a savings account? |
+| 2 | 2 Present value | `ch02_present_value.py` (ready): $1,000 at 4% savings vs each strategy | Is the strategy better than a savings account? |
 | 3 | 3 Expected value | Avg R of each strategy from `backtest_trades.csv` | Which bets are "roulette"? |
 | 4 | 4 Random walk | Simulate coin-flip prices; run `orb` on them | Can a strategy "work" on pure noise? |
 | 5 | 5 Square root rule | NAS100 daily vs weekly vs monthly volatility | Does √time hold for NAS100? |
