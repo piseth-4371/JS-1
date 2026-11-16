@@ -46,6 +46,7 @@ class Trade:
     r: float
     risk_pct: float
     equity_after: float
+    planned_risk_pts: float = 0.0   # entry - stop as planned when the order was placed (r uses the fill's risk_pts)
 
 
 @dataclass
@@ -63,7 +64,9 @@ def _iso_week(d):
 
 
 def run(strategy: Strategy, f: Frame, settings: RiskSettings | None = None, costs: Costs | None = None,
-        start_equity: float = 10.0) -> Result:
+        start_equity: float = 10.0, valid_dates: set | None = None) -> Result:
+    """valid_dates: if given, new orders are only accepted on these New York dates (see
+    app/core/data_quality.py). None = every date, the original behaviour."""
     settings = settings or RiskSettings()
     costs = costs or Costs()
     a, m = f.a, f.m1
@@ -85,7 +88,7 @@ def run(strategy: Strategy, f: Frame, settings: RiskSettings | None = None, cost
         acct.consecutive_losses = acct.consecutive_losses + 1 if r < 0 else 0
         res.trades.append(Trade(strategy.name, side, p["kind"], p["ny_date"], p["entry_ts"], int(m["ts"][j]),
                                 p["entry"], p["stop"], p["target"], price, reason, p["risk_pts"], r,
-                                p["risk_pct"], acct.equity))
+                                p["risk_pct"], acct.equity, p["planned_risk_pts"]))
         pos = None
 
     def exit_check(j, fill_bar: bool):
@@ -122,7 +125,8 @@ def run(strategy: Strategy, f: Frame, settings: RiskSettings | None = None, cost
             return
         target = od.target if od.target is not None else fill + s * od.rr_target * risk_pts
         pos = dict(side=s, kind=od.kind, entry=fill, stop=od.stop, target=target, risk_pts=risk_pts,
-                   risk_pct=pending["risk_pct"], entry_ts=int(m["ts"][j]), ny_date=m["ny_date"][j])
+                   risk_pct=pending["risk_pct"], entry_ts=int(m["ts"][j]), ny_date=m["ny_date"][j],
+                   planned_risk_pts=(od.entry - od.stop) * s)
         pending = None
         acct.trades_today += 1
         acct.open_positions = 1
@@ -156,6 +160,9 @@ def run(strategy: Strategy, f: Frame, settings: RiskSettings | None = None, cost
         if order is None:
             continue
         res.signals += 1
+        if valid_dates is not None and a["ny_date"][i] not in valid_dates:
+            res.rejections["Invalid data session"] += 1
+            continue
         if not a["news_known"][i]:
             res.rejections["No news calendar for this date"] += 1
             continue

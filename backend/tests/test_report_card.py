@@ -63,3 +63,15 @@ def test_more_risk_does_not_fix_a_negative_edge():
 def test_needs_data():
     with pytest.raises(ValueError):
         report([1.0], years=1)
+
+
+def test_report_family_and_week_fields():
+    import numpy as np
+    from app.backtest.report_card import report
+    r = np.array([1.0, -1.0, 2.0, -1.0, 0.5] * 20)
+    plain = report(r, 1.0)
+    assert plain.ci95_week_low is None and plain.tests == 1
+    assert abs(plain.ci_low_family - plain.ci95_low) < 0.002
+    c = report(r, 1.0, groups=np.arange(100) // 5, tests=36)
+    assert c.ci_low_family < c.ci95_low and c.ci95_week_low is not None
+    assert c.verdict == plain.verdict          # family width is reported, the verdict rule is unchanged

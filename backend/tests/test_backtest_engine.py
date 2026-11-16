@@ -100,3 +100,26 @@ def test_fvg_invalidation_cancels_pending():
     # cancel if a 5m bar closes below 103.5 (before price reaches the 100 limit)
     res = run(OneShot(cancel_level=103.5), frame(mins), costs=NO_COSTS)
     assert res.trades == [] and res.cancelled["invalidated (closed beyond FVG)"] == 1
+
+
+# --- audit 2026-11-16: valid-session filter and planned risk ---------------------------------------
+def test_valid_dates_none_keeps_original_behaviour():
+    mins = [(105, 106, 104, 105)] * 5 + [(105, 105, 99, 101)] + [(101, 121, 101, 120)] + [FLAT] * 8
+    assert len(run(OneShot(), frame(mins), costs=NO_COSTS).trades) == 1
+
+
+def test_invalid_session_rejects_new_orders_and_counts_it():
+    import datetime
+    mins = [(105, 106, 104, 105)] * 5 + [(105, 105, 99, 101)] + [(101, 121, 101, 120)] + [FLAT] * 8
+    res = run(OneShot(), frame(mins), costs=NO_COSTS, valid_dates={datetime.date(2026, 11, 10)})
+    assert res.trades == [] and res.rejections["Invalid data session"] == 1
+    ok = run(OneShot(), frame(mins), costs=NO_COSTS, valid_dates={datetime.date(2026, 11, 9)})
+    assert len(ok.trades) == 1
+
+
+def test_planned_risk_recorded_separately_from_fill_risk():
+    # limit 100, stop 90; the minute opens at 95 (better fill), so fill risk 5 but planned risk 10
+    mins = [(105, 106, 104, 105)] * 5 + [(95, 96, 94, 95)] + [(95, 121, 95, 120)] + [FLAT] * 8
+    (t,) = run(OneShot(), frame(mins), costs=NO_COSTS).trades
+    assert t.entry == 95 and t.risk_pts == 5 and t.planned_risk_pts == 10
+    assert t.r == pytest.approx((120 - 95) / 5)       # engine convention: R per FILL risk

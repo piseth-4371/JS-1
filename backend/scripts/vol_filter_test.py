@@ -84,8 +84,8 @@ def main() -> int:
           f"not enough history {counts['no_history']} (start of 2019).", "",
           f"## Verdict: {'PASS — ' + ', '.join(passed) if passed else 'FAIL — no strategy passes in both periods'}", "",
           "Checks (all needed, both periods): 1 filtered avg R > 0 · 2 enough trades (100 dev / 50 val) · "
-          "3 luck chance ≤ 10% · 4 better than unfiltered · 5 beats ≥ 90% of random-skip controls.", "",
-          "| strategy | split | trades base | avg R base | trades filtered | avg R filtered | luck chance | beats random skip | checks 1-5 | result |",
+          "3 bootstrap share of resampled averages ≤ 0 is ≤ 10% · 4 better than unfiltered · 5 beats ≥ 90% of random-skip controls.", "",
+          "| strategy | split | trades base | avg R base | trades filtered | avg R filtered | bootstrap share <= 0 | beats random skip | checks 1-5 | result |",
           "|---|---|---:|---:|---:|---:|---:|---:|---|---|", *rows, "",
           "## Information only (not part of the verdict): trades on skipped days, unfiltered", "",
           "| strategy | split | calm trades | calm avg R | wild trades | wild avg R |", "|---|---|---:|---:|---:|---:|",

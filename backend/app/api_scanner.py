@@ -40,6 +40,7 @@ def summary(group: list[ScannerSignalRow]) -> dict:
             "total_r": round(sum(rs), 2), "recorded": len(group),
             "expired": sum(x.status == "expired" for x in group),
             "invalid": sum(x.status == "invalid" for x in group),
+            "cancelled": sum(x.status == "cancelled" for x in group),
             "pending": sum(x.status in ("open", "filled") for x in group)}
 
 

@@ -10,8 +10,25 @@ from app.models import Base, BarRow
 
 
 def init_db() -> None:
-    """Create tables if they don't exist (Alembic migrations come later)."""
-    Base.metadata.create_all(get_engine())
+    """Create tables if they don't exist (Alembic migrations come later), then add any NEW nullable
+    columns to existing tables. Only adds; never drops, renames or rewrites data."""
+    engine = get_engine()
+    Base.metadata.create_all(engine)
+    _add_missing_nullable_columns(engine)
+
+
+def _add_missing_nullable_columns(engine) -> None:
+    from sqlalchemy import inspect, text
+    insp = inspect(engine)
+    for table in Base.metadata.sorted_tables:
+        if not insp.has_table(table.name):
+            continue
+        have = {c["name"] for c in insp.get_columns(table.name)}
+        for col in table.columns:
+            if col.name in have or not col.nullable or col.primary_key:
+                continue
+            with engine.begin() as conn:
+                conn.execute(text(f'ALTER TABLE "{table.name}" ADD COLUMN "{col.name}" {col.type.compile(engine.dialect)}'))
 
 
 def save_bars(bars: list[Bar], *, update_existing: bool = False) -> int:

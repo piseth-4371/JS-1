@@ -75,12 +75,13 @@ class ScannerSignalRow(Base):
     target: Mapped[float | None] = mapped_column(Float)
     rr_target: Mapped[float] = mapped_column(Float)
     expiry_ts: Mapped[int] = mapped_column(BigInteger)
+    cancel_level: Mapped[float | None] = mapped_column(Float)  # unfilled + 5m close beyond it -> cancelled (NULL on old rows)
     cost_r: Mapped[float] = mapped_column(Float)               # trading cost in R
     qualified: Mapped[bool] = mapped_column(Boolean)           # strategy passed dev + validation on this market
     shown: Mapped[bool] = mapped_column(Boolean)               # was THE signal shown (not practice-only)
     reason: Mapped[str] = mapped_column(Text, default="")
     data_source: Mapped[str] = mapped_column(String(40))
-    status: Mapped[str] = mapped_column(String(12), default="open")   # open / filled / target / stop / expired / session_end
+    status: Mapped[str] = mapped_column(String(12), default="open")   # open / filled / target / stop / expired / cancelled / session_end / invalid
     filled_ts: Mapped[int | None] = mapped_column(BigInteger)
     resolved_ts: Mapped[int | None] = mapped_column(BigInteger)
     r: Mapped[float | None] = mapped_column(Float)

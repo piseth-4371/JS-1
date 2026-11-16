@@ -4,7 +4,7 @@ For each strategy and split it reports:
   base         normal costs, 2.0R target
   costs x2     double spread/slippage/fees            -> a real edge should survive
   2.5R / 3.0R  different targets (same entries)        -> if results flip, the edge may be luck
-  bootstrap    90% range of the average R + chance the true edge is <= 0
+  bootstrap    90% range of the average R + share of resamples with average <= 0 (a frequency, not a probability)
   monte carlo  how deep the drawdown / losing streak could get with an unlucky trade order
 
   .\\.venv\\Scripts\\python scripts\\robustness.py --market btc
@@ -103,7 +103,7 @@ def main() -> int:
             md.append(row)
             print(row)
     md += ["", "**Reading this:** 'robust in this split' needs avg R > 0 at base, with double costs, at 2.5R and 3.0R, "
-           "and less than a 10% bootstrap chance that the true edge is ≤ 0, with ≥ 30 trades. A strategy must be robust in "
+           "and under 10% of bootstrap resamples averaging ≤ 0 (a frequency, not a probability), with ≥ 30 trades. A strategy must be robust in "
            "BOTH development and validation. Max DD p95 = 1 in 20 trade orders would be worse. "
            "Past results do not guarantee future results."]
     out = Path(__file__).resolve().parent.parent.parent / "docs" / f"robustness_report{'_btc' if mk is BTCUSD else ''}.md"

@@ -61,7 +61,7 @@ def session_quality(m1: pd.DataFrame) -> list[SessionQuality]:
         return []
     ny = pd.to_datetime(m1["ts"], unit="s", utc=True).dt.tz_convert("America/New_York")
     mod = (ny.dt.hour * 60 + ny.dt.minute).to_numpy()
-    keep = (mod >= WINDOW_START_MIN) & (mod < WINDOW_END_MIN) & (ny.dt.dayofweek.to_numpy() < 5)
+    keep = (mod >= WINDOW_START_MIN) & (mod < WINDOW_END_MIN) & (ny.dt.day_of_week.to_numpy() < 5)
     df = pd.DataFrame({"d": ny.dt.date.to_numpy()[keep], "mod": mod[keep],
                        "v": m1["v"].to_numpy()[keep] if "v" in m1 else np.zeros(int(keep.sum()))})
     out = []

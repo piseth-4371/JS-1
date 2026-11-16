@@ -5,11 +5,17 @@ Pure functions, no files or network. Every number answers one plain question:
 
   expected value (ch 3)   avg_r         What does one trade make on average?
   standard error (ch 15)  se, ci95      How sure are we about that average?
-  luck check (ch 4)       p_no_edge     How often would a strategy with NO edge look at least this good?
+  bootstrap share (ch 4)  p_no_edge     Share of resampled trade lists whose average is <= 0. A resampling
+                                        frequency, NOT the probability that the strategy has (no) edge.
+  week-clustered range    ci95_week_*   Same 95% range, resampling whole weeks (trades in a week are not independent).
+  multiple testing        ci_low_family Lower end of the range widened for `tests` strategy versions (Bonferroni).
   volatility (ch 7)       std_r         How much do single trades swing?
-  Sharpe ratio (ch 8)     sharpe_year   Return per unit of swing, per year (risk-free rate taken as 0).
+  Sharpe ratio (ch 8)     sharpe_year   Return per unit of swing, per year (risk-free rate taken as 0). Computed per
+                                        trade x sqrt(trades/year): assumes independent trades and ignores days with
+                                        no trade, so it is a rough guide, not a fund-style daily Sharpe.
   volatility drag (ch 9)  growth_year   What the account really keeps per year at the chosen risk %.
-  Kelly (ch 14)           kelly_pct     Best % of the account to risk per trade. 0 = do not trade.
+  Kelly (ch 14)           kelly_pct     Best % of the account to risk per trade. 0 = do not trade. Estimated on the
+                                        SAME trades (in-sample), so it overstates; never use it to size real trades.
   fat tails / ES (16-17)  es5           Average of the worst 5 % of trades.
   Monte Carlo (ch 15)     mc_*          10,000 reshuffled years: typical, bad and worst cases.
 
@@ -21,6 +27,8 @@ import math
 from dataclasses import asdict, dataclass
 
 import numpy as np
+
+from app.backtest.robustness import bonferroni_z, cluster_bootstrap
 
 SEED = 7                 # fixed seed (ch 15): the same numbers every run
 MC_PATHS = 10_000
@@ -50,6 +58,11 @@ class Card:
     mc_median_max_dd_pct: float
     mc_worst5_max_dd_pct: float
     verdict: str
+    ci95_week_low: float | None = None    # week-clustered bootstrap (only when `groups` is given)
+    ci95_week_high: float | None = None
+    share_le0_week: float | None = None
+    tests: int = 1                        # strategy versions tried in the family (multiple testing)
+    ci_low_family: float | None = None    # avg - z(Bonferroni over `tests`) * se
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -81,7 +94,9 @@ def max_drawdowns(paths: np.ndarray) -> np.ndarray:
     return ((peaks - paths) / peaks).max(axis=1)
 
 
-def report(r_values, years: float, risk_pct: float = 0.5, seed: int = SEED) -> Card:
+def report(r_values, years: float, risk_pct: float = 0.5, seed: int = SEED, groups=None, tests: int = 1) -> Card:
+    """groups: optional label per trade (e.g. ISO week) for the clustered bootstrap.
+    tests: how many strategy versions were tried; widens `ci_low_family` (the verdict stays the plain 95% one)."""
     r = np.asarray(r_values, dtype=float)
     n = r.size
     if n < 2 or years <= 0:
@@ -104,6 +119,7 @@ def report(r_values, years: float, risk_pct: float = 0.5, seed: int = SEED) -> C
     final = (equity[:, -1] - 1) * 100
     dd = max_drawdowns(equity) * 100
 
+    cb = cluster_bootstrap(r, groups, seed=seed) if groups is not None else None
     ci_low, ci_high = avg - 1.96 * se, avg + 1.96 * se
     if ci_low > 0:
         verdict = "EDGE LIKELY (still needs a pre-registered test)"
@@ -124,4 +140,8 @@ def report(r_values, years: float, risk_pct: float = 0.5, seed: int = SEED) -> C
         mc_loss_chance_pct=round(float((final < 0).mean() * 100), 1),
         mc_median_max_dd_pct=round(float(np.median(dd)), 1),
         mc_worst5_max_dd_pct=round(float(np.percentile(dd, 95)), 1),
-        verdict=verdict)
+        verdict=verdict,
+        ci95_week_low=None if cb is None else round(cb.ci_low, 3),
+        ci95_week_high=None if cb is None else round(cb.ci_high, 3),
+        share_le0_week=None if cb is None else round(cb.share_le0, 3),
+        tests=tests, ci_low_family=round(avg - bonferroni_z(tests) * se, 3))

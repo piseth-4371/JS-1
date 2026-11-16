@@ -193,3 +193,36 @@ def test_run_scan_alerts_new_setups_once_and_outcomes(temp_db, monkeypatch):
         scanner.run_scan(s, now=ts(10, 4), alerts=second)
     assert all(a["type"] == "outcome" for a in second)            # same setup is not announced twice
     assert second[-1]["status"] == "target" and second[-1]["qualified"] is False
+
+
+# --- audit 2026-11-16: cancel_level parity with the backtest engine and paper broker ----------------
+def test_resolve_cancels_unfilled_order_when_5m_bar_closes_beyond_level():
+    r = _row()
+    r.cancel_level = 102.0      # long: cancelled if a later 5m bar closes BELOW 102
+    rows = [(ts(10, m), 105, 106, 104, 105) for m in range(0, 5)]          # 10:00-10:04 bar closes 105
+    rows += [(ts(10, m), 104, 104, 101, 101) for m in range(5, 10)]        # 10:05-10:09 bar closes 101 < 102
+    rows += [(ts(10, 10), 101, 101, 99, 100)]                              # would fill at 100 - too late
+    resolve(r, bars(rows), nas_hold_mask, ts(10, 20))
+    assert r.status == "cancelled" and r.resolved_ts == ts(10, 10) and r.r is None
+    assert r.execution.fill_price is None
+
+
+def test_cancel_level_ignored_once_filled_and_null_on_old_rows():
+    rows = [(ts(10, 0), 105, 106, 104, 105), (ts(10, 1), 104, 104, 99.5, 101)]   # fills at 100 at 10:01
+    rows += [(ts(10, m), 101, 101, 95, 96) for m in range(2, 10)]                 # closes far below level
+    rows += [(ts(10, 10), 96, 121, 96, 120)]
+    r = _row()
+    r.cancel_level = 102.0
+    resolve(r, bars(rows), nas_hold_mask, ts(10, 20))
+    assert r.status == "target"
+    old = _row()                 # cancel_level None (rows stored before the column existed)
+    resolve(old, bars(rows), nas_hold_mask, ts(10, 20))
+    assert old.status == "target"
+
+
+def test_incomplete_5m_bucket_does_not_cancel():
+    r = _row()
+    r.cancel_level = 102.0
+    rows = [(ts(10, m), 101, 101, 100.5, 101) for m in range(5, 9)]   # only 4 of 5 minutes -> no 5m bar
+    resolve(r, bars(rows), nas_hold_mask, ts(10, 20))
+    assert r.status == "open"

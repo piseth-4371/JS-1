@@ -41,7 +41,9 @@ def main() -> int:
            "## How to read it", "",
            "- **Avg R** (ch 3, expected value): what one trade makes on average. Below 0 = loses money over time.",
            "- **95% range** (ch 15, standard error): where the true average probably lies. If the whole range is below 0, the loss is real, not bad luck.",
-           "- **Luck chance** (ch 4): how often reshuffled trades average 0R or worse. Near 100% = no edge.",
+           "- **Share <= 0** (ch 4): share of bootstrap resamples (with replacement) whose average is 0R or worse. "
+           "A resampling frequency, not the probability that the strategy has or lacks an edge. "
+           "(Older versions of this report called it 'luck chance'.)",
            "- **Sharpe/yr** (ch 8): return per unit of swing per year. Good funds are around +0.5 to +1. Negative = paid nothing for the risk.",
            f"- **Growth/yr** (ch 9, volatility drag): what the account really keeps per year at {a.risk:g}% risk.",
            "- **Kelly %** (ch 14): best % of the account to risk per trade. **0 means: do not trade it.**",
@@ -56,7 +58,7 @@ def main() -> int:
         for split, start, end, years in SPLITS:
             part = df[(df["ny_date"] >= start) & (df["ny_date"] <= end)]
             out += [f"## {market} — {split} {start[:4]}-{end[:4]}", "",
-                    "| strategy | trades | avg R | 95% range | luck chance | Sharpe/yr | growth/yr | Kelly % | worst 5% | MC loss chance | MC median | MC bad DD (95th) | verdict |",
+                    "| strategy | trades | avg R | 95% range | share <= 0 | Sharpe/yr | growth/yr | Kelly % | worst 5% | MC loss chance | MC median | MC bad DD (95th) | verdict |",
                     "|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
             for name, g in part.groupby("strategy"):
                 if len(g) < 2:

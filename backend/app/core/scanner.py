@@ -22,7 +22,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.core.features import build_frame, load_m1
+from app.core.features import build_frame, load_m1, resample_complete
 from app.core.fills import Costs, try_fill, check_exit, net_points
 from app.core import news
 from app.core.markets import btc_weekend_mask, nas_hold_mask
@@ -99,6 +99,7 @@ class Setup:
     news_blackout: bool
     news_known: bool = True
     expired: bool = False
+    cancel_level: float | None = None   # cancelled if a later 5m bar CLOSES beyond it (same rule as the backtest)
 
     @property
     def eligible(self) -> bool:
@@ -165,7 +166,8 @@ def scan_market(m: ScanMarket, now: int) -> MarketStatus:
                                estimated_cost(m.key, order.entry, order.kind) / risk, (m.key, name) in QUALIFIED,
                                bool(a["news"][i]) or news.blackout_event(now) is not None,
                                bool(a["news_known"][i]) and news.covered(now),
-                               now >= order.expiry_ts))
+                               now >= order.expiry_ts,
+                               None if order.cancel_level is None else float(order.cancel_level)))
     st.detail = f"{len(st.setups)} setup(s) on the {datetime.fromtimestamp(int(a['close_ts'][i]), NY):%H:%M} NY bar"
     return st
 
@@ -183,6 +185,7 @@ def record(s: Session, statuses: list[MarketStatus], chosen: Setup | None, now: 
             s.add(ScannerSignalRow(market=x.market, strategy=x.strategy, bar_close_ts=x.bar_close_ts, created_ts=now,
                                    side=x.side, kind=x.kind, entry=x.entry, stop=x.stop, target=x.target,
                                    rr_target=x.rr_target, expiry_ts=x.expiry_ts, cost_r=x.cost_share,
+                                   cancel_level=x.cancel_level,
                                    qualified=x.qualified, shown=x is chosen, reason=x.reason,
                                    data_source=sources[x.market],
                                    execution=ScannerExecutionRow(version=2, costs=asdict(COSTS[x.market]))))
@@ -192,7 +195,9 @@ def record(s: Session, statuses: list[MarketStatus], chosen: Setup | None, now: 
 
 def resolve(row: ScannerSignalRow, m1, window: Callable, now: int) -> None:
     """Fill in what really happened, from closed 1-minute bars after the signal. Pessimistic: if a bar touches
-    both stop and target, the stop counts. Unfilled at expiry -> 'expired'. Window end -> 'session_end'."""
+    both stop and target, the stop counts. Unfilled at expiry -> 'expired'. Window end -> 'session_end'.
+    Unfilled and a later complete 5m bar closes beyond `cancel_level` -> 'cancelled' (as in the backtest
+    engine and the paper broker)."""
     execution = row.execution
     if execution is None:  # Preserve old results; exclude their different fill model from new statistics.
         return
@@ -207,6 +212,14 @@ def resolve(row: ScannerSignalRow, m1, window: Callable, now: int) -> None:
     # Never credit a fill before the scanner actually published the setup.
     active_from = max(row.bar_close_ts, ((row.created_ts + 59) // 60) * 60)
 
+    cancel_at = None
+    if not filled and row.cancel_level is not None and not m1.empty:
+        b5 = resample_complete(m1[["ts", "o", "h", "l", "c"]].assign(v=0.0), 5)
+        close_ts = b5["ts"].to_numpy() + 300
+        beyond = (b5["c"].to_numpy() - row.cancel_level) * side < 0
+        hits = close_ts[beyond & (close_ts > row.bar_close_ts) & (close_ts <= now)]
+        cancel_at = int(hits.min()) if hits.size else None
+
     def finish(price: float, reason: str, t: int) -> None:
         execution.exit_price = float(price)
         row.status, row.resolved_ts = reason, t
@@ -214,6 +227,9 @@ def resolve(row: ScannerSignalRow, m1, window: Callable, now: int) -> None:
 
     for b in m1.sort_values("ts").itertuples():
         t = int(b.ts)
+        if not filled and cancel_at is not None and t >= cancel_at:
+            row.status, row.resolved_ts = "cancelled", cancel_at
+            return
         if t < active_from or t + 60 > now or (row.filled_ts and t < row.filled_ts):
             continue
         d = datetime.fromtimestamp(t, NY)
@@ -241,7 +257,9 @@ def resolve(row: ScannerSignalRow, m1, window: Callable, now: int) -> None:
             price, reason = hit
             finish(price, reason, t)
             return
-    # Leave unfilled rows pending until the price history reaches expiry.
+    if not filled and cancel_at is not None:
+        row.status, row.resolved_ts = "cancelled", cancel_at
+    # Otherwise leave unfilled rows pending until the price history reaches expiry.
 
 
 LATEST: dict = {"scanned_ts": None, "signal": None, "markets": [], "note": "scanner has not run yet"}

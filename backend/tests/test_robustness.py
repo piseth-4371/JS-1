@@ -19,3 +19,32 @@ def test_bootstrap_clear_edge_vs_no_edge():
     coin = rng.choice([1.0, -1.0], size=300)                         # avg about 0
     assert bootstrap(coin).p_no_edge > 0.10
     assert bootstrap([]).p_no_edge == 1.0
+
+
+# --- audit 2026-11-16: dependence and multiple testing ---------------------------------------------
+def test_cluster_bootstrap_wider_than_iid_when_trades_in_a_week_move_together():
+    import numpy as np
+    from app.backtest.robustness import bootstrap, cluster_bootstrap
+    rng = np.random.default_rng(0)
+    week_effect = rng.normal(0, 1, 60)
+    rs = np.repeat(week_effect, 10) + rng.normal(0, 0.1, 600)     # 60 weeks x 10 strongly linked trades
+    weeks = np.repeat(np.arange(60), 10)
+    iid = bootstrap(rs, runs=4000)
+    cl = cluster_bootstrap(rs, weeks, runs=4000)
+    assert cl.groups == 60
+    assert (cl.ci_high - cl.ci_low) > 2.0 * (iid.ci_high - iid.ci_low)
+
+
+def test_cluster_bootstrap_equals_iid_style_when_each_trade_is_its_own_group():
+    import numpy as np
+    from app.backtest.robustness import cluster_bootstrap
+    rs = np.array([1.0, -1.0, 2.0, -1.0, 0.5] * 20)
+    cl = cluster_bootstrap(rs, np.arange(rs.size), runs=4000)
+    se = rs.std(ddof=1) / np.sqrt(rs.size)
+    assert abs((cl.ci_high - cl.ci_low) / 2 - 1.96 * se) < 0.25 * 1.96 * se
+
+
+def test_bonferroni_z():
+    from app.backtest.robustness import bonferroni_z
+    assert abs(bonferroni_z(1) - 1.96) < 0.01
+    assert abs(bonferroni_z(36) - 3.20) < 0.01
