@@ -64,9 +64,12 @@ def _iso_week(d):
 
 
 def run(strategy: Strategy, f: Frame, settings: RiskSettings | None = None, costs: Costs | None = None,
-        start_equity: float = 10.0, valid_dates: set | None = None) -> Result:
+        start_equity: float = 10.0, valid_dates: set | None = None, ask: dict | None = None) -> Result:
     """valid_dates: if given, new orders are only accepted on these New York dates (see
-    app/core/data_quality.py). None = every date, the original behaviour."""
+    app/core/data_quality.py). None = every date, the original behaviour.
+    ask: optional ASK prices {"o", "h", "l"} aligned minute by minute with f.m1 (which then holds BID prices).
+    When given, every BUY (long entry, short exit) fills/triggers on the ASK and every SELL on the BID, so the
+    spread is inside the prices: pass costs with spread=0. None = the original bid-only model."""
     settings = settings or RiskSettings()
     costs = costs or Costs()
     a, m = f.a, f.m1
@@ -91,8 +94,12 @@ def run(strategy: Strategy, f: Frame, settings: RiskSettings | None = None, cost
                                 p["risk_pct"], acct.equity, p["planned_risk_pts"]))
         pos = None
 
+    def bar(j, buy: bool):
+        src = ask if (buy and ask is not None) else m
+        return src["o"][j], src["h"][j], src["l"][j]
+
     def exit_check(j, fill_bar: bool):
-        hit = check_exit(pos["side"], pos["stop"], pos["target"], m["o"][j], m["h"][j], m["l"][j], fill_bar)
+        hit = check_exit(pos["side"], pos["stop"], pos["target"], *bar(j, buy=pos["side"] == -1), fill_bar)
         if hit:
             close_position(j, *hit)
 
@@ -100,7 +107,7 @@ def run(strategy: Strategy, f: Frame, settings: RiskSettings | None = None, cost
         nonlocal pending, pos
         if pos is not None:
             if not m["can_hold"][j]:
-                close_position(j, m["o"][j], "session_end")
+                close_position(j, bar(j, buy=pos["side"] == -1)[0], "session_end")
             else:
                 exit_check(j, fill_bar=False)
         if pending is None or pos is not None:
@@ -115,7 +122,7 @@ def run(strategy: Strategy, f: Frame, settings: RiskSettings | None = None, cost
             pending = None
             return
         s = od.side
-        fill = try_fill(od.kind, s, od.entry, m["o"][j], m["h"][j], m["l"][j])
+        fill = try_fill(od.kind, s, od.entry, *bar(j, buy=s == 1))
         if fill is None:
             return
         risk_pts = (fill - od.stop) * s

@@ -25,14 +25,17 @@ from datetime import date, datetime, timedelta, timezone
 from app.core.market_data import Bar
 
 INSTRUMENT = "USATECHIDXUSD"  # Dukascopy's Nasdaq-100 index CFD
+ASK_SYMBOL = INSTRUMENT + ":ASK"   # ASK candles are stored under this symbol (BID keeps the plain name)
 PRICE_SCALE = 1000            # 31033675 -> 31033.675 (to be confirmed against MT5)
 SOURCE = "dukascopy"
 RECORD = struct.Struct(">5if")
 
 
-def day_url(day: date, instrument: str = INSTRUMENT, scheme: str = "https") -> str:
+def day_url(day: date, instrument: str = INSTRUMENT, scheme: str = "https", side: str = "BID") -> str:
+    if side not in ("BID", "ASK"):
+        raise ValueError(side)
     return (f"{scheme}://datafeed.dukascopy.com/datafeed/{instrument}/"
-            f"{day.year:04d}/{day.month - 1:02d}/{day.day:02d}/BID_candles_min_1.bi5")
+            f"{day.year:04d}/{day.month - 1:02d}/{day.day:02d}/{side}_candles_min_1.bi5")
 
 
 def parse_candles(raw_lzma: bytes, day: date, instrument: str = INSTRUMENT, scale: int = PRICE_SCALE) -> list[Bar]:
@@ -71,7 +74,7 @@ def _get(url: str, timeout: float) -> bytes | None:
 _preferred_scheme = "https"
 
 
-def fetch_day(day: date, instrument: str = INSTRUMENT, timeout: float = 20, retries: int = 3) -> list[Bar]:
+def fetch_day(day: date, instrument: str = INSTRUMENT, timeout: float = 20, retries: int = 3, side: str = "BID") -> list[Bar]:
     """One day of bars.
 
     RateLimited (503/429) is raised IMMEDIATELY - the caller must wait (see scripts/backfill.py).
@@ -83,9 +86,10 @@ def fetch_day(day: date, instrument: str = INSTRUMENT, timeout: float = 20, retr
         schemes = [_preferred_scheme] + [s for s in ("https", "http") if s != _preferred_scheme]
         for scheme in schemes:
             try:
-                raw = _get(day_url(day, instrument, scheme), timeout)
+                raw = _get(day_url(day, instrument, scheme, side), timeout)
                 _preferred_scheme = scheme  # remember what worked
-                return [] if raw is None else parse_candles(raw, day, instrument)
+                symbol = instrument if side == "BID" else instrument + ":ASK"
+                return [] if raw is None else parse_candles(raw, day, symbol)
             except RateLimited:
                 raise
             except (urllib.error.URLError, TimeoutError, OSError) as e:

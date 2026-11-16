@@ -123,3 +123,35 @@ def test_planned_risk_recorded_separately_from_fill_risk():
     (t,) = run(OneShot(), frame(mins), costs=NO_COSTS).trades
     assert t.entry == 95 and t.risk_pts == 5 and t.planned_risk_pts == 10
     assert t.r == pytest.approx((120 - 95) / 5)       # engine convention: R per FILL risk
+
+
+# --- bid/ask re-test (docs/bidask_retest_preregistration.md): buys on the ASK, sells on the BID --------
+def _ask_of(mins, spread):
+    n = len(mins)
+    o, h, l, _ = (np.array(x, dtype=float) for x in zip(*mins))
+    return {"o": o + spread, "h": h + spread, "l": l + spread}
+
+
+def test_long_limit_needs_the_ask_at_the_limit():
+    # bid low touches 99 (limit 100), but ask = bid + 2 only reaches 101 -> no fill with ask prices
+    mins = [(105, 106, 104, 105)] * 5 + [(105, 105, 99, 101)] + [(101, 121, 101, 120)] + [FLAT] * 8
+    assert len(run(OneShot(), frame(mins), costs=NO_COSTS).trades) == 1
+    res = run(OneShot(), frame(mins), costs=NO_COSTS, ask=_ask_of(mins, 2.0))
+    assert res.trades == []
+
+
+def test_long_fills_on_ask_and_exits_on_bid_so_spread_is_inside_prices():
+    mins = [(105, 106, 104, 105)] * 5 + [(105, 105, 97, 99)] + [(101, 121, 101, 120)] + [FLAT] * 8
+    (t,) = run(OneShot(), frame(mins), costs=NO_COSTS, ask=_ask_of(mins, 2.0)).trades
+    assert t.entry == 100 and t.exit == 120 and t.exit_reason == "target"   # target hit on the BID high
+    assert t.risk_pts == 10 and t.r == pytest.approx(2.0)
+
+
+def test_short_stop_triggers_on_the_ask():
+    # short limit at 100, stop 110: bid high 108.5 never reaches 110, ask (bid + 2) reaches 110.5 -> stopped
+    mins = [(95, 96, 94, 95)] * 5 + [(95, 100.5, 95, 100)] + [(100, 108.5, 99, 108)] + [FLAT] * 8
+    kw = dict(side=-1, entry=100.0, stop=110.0, target=80.0)
+    bid_only = run(OneShot(**kw), frame(mins), costs=NO_COSTS).trades
+    assert bid_only == []          # bid never reaches the stop; the position is still open at the end of the data
+    (t,) = run(OneShot(**kw), frame(mins), costs=NO_COSTS, ask=_ask_of(mins, 2.0)).trades
+    assert t.entry == 100 and t.exit == 110 and t.exit_reason == "stop" and t.r == pytest.approx(-1.0)
