@@ -172,3 +172,24 @@ def test_api_hides_stale_signal_and_excludes_legacy(temp_db, monkeypatch):
     assert result["signal"] is None
     assert result["track_record"]["legacy_excluded"] == 1
     assert result["track_record"]["practice"]["resolved"] == 0
+
+
+def test_run_scan_alerts_new_setups_once_and_outcomes(temp_db, monkeypatch):
+    from sqlalchemy.orm import Session
+    from app.db import get_engine
+    x = _setup(qualified=False)
+    x.bar_close_ts, x.expiry_ts = ts(10, 0), ts(10, 30)
+    status = scanner.MarketStatus("nas100", "NAS100", "open", "", setups=[x])
+    market = ScanMarket("nas100", "NAS100", "t", "SYM", nas_hold_mask, [])
+    monkeypatch.setattr(scanner, "scan_markets", lambda: [market])
+    monkeypatch.setattr(scanner, "scan_market", lambda m, now: status)
+    prices = bars([(ts(10, 0), 95, 101, 94, 100), (ts(10, 1), 100, 101, 99, 100), (ts(10, 2), 100, 121, 99, 120)])
+    monkeypatch.setattr(scanner, "load_m1", lambda *a: prices)
+    first, second = [], []
+    with Session(get_engine()) as s, s.begin():
+        scanner.run_scan(s, now=ts(10, 0) + 1, alerts=first)
+    assert [a["type"] for a in first] == ["setup"] and first[0]["setup"]["strategy"] == "orb"
+    with Session(get_engine()) as s, s.begin():
+        scanner.run_scan(s, now=ts(10, 4), alerts=second)
+    assert all(a["type"] == "outcome" for a in second)            # same setup is not announced twice
+    assert second[-1]["status"] == "target" and second[-1]["qualified"] is False

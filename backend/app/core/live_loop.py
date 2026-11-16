@@ -61,8 +61,12 @@ async def scanner_forever() -> None:
     """Every 20 s: refresh gold bars, then run the 3-market signals-only scanner."""
     from sqlalchemy.orm import Session
 
-    from app.core import scanner
+    from app.core import scanner, telegram
     from app.db import get_engine
+
+    notifier = telegram.Notifier()
+    if telegram.enabled():
+        await asyncio.to_thread(telegram.send, "🤖 Scanner started on your PC (signals only, paper/learning, never trades).")
 
     try:
         await asyncio.to_thread(_pull_gold, HISTORY_DAYS + 1)
@@ -73,12 +77,15 @@ async def scanner_forever() -> None:
             await asyncio.to_thread(_pull_gold)
         except Exception as e:
             log.warning("gold bars: %s", e)
+        alerts: list[dict] = []
         try:
             def _scan():
                 with Session(get_engine()) as s, s.begin():
-                    return scanner.run_scan(s)
-            res = await asyncio.to_thread(_scan)
+                    return scanner.run_scan(s, alerts=alerts)
+            res = await asyncio.to_thread(_scan)    # committed before any alert is sent
             log.info("scanner: %s", res["note"])
+            if telegram.enabled():
+                await asyncio.to_thread(notifier.notify, res, alerts, int(res["scanned_ts"]))
         except Exception:
             log.exception("scanner cycle failed")
         await asyncio.sleep(INTERVAL)

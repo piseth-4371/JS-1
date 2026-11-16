@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { num, nyTime } from "../api.js";
 import { strategyLabel } from "../strategies.js";
+import { isScanFresh } from "../sessions.js";
 
 // Signals-only scanner over NAS100, BTC and gold. It never places orders.
 // A signal is shown ONLY from a strategy that passed its backtest on that market; otherwise WAIT.
@@ -31,7 +32,7 @@ export default function ScannerPanel({ scan }) {
   }, []);
   if (!scan) return <div className="card text-sm text-slate-400">Scanner: loading…</div>;
   const freshSignal = scan.signal && now < scan.signal.expiry_ts
-    && now - (scan.scanned_ts ?? 0) <= 60;
+    && isScanFresh(scan.scanned_ts, Date.now() / 1000);
   const practice = (scan.markets ?? []).flatMap((m) => m.setups.filter((s) => !s.eligible));
   const tr = scan.track_record ?? {};
   return (

@@ -6,6 +6,7 @@ and you can change behaviour without editing Python files.
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,6 +27,12 @@ class Settings(BaseSettings):
     engine_source: str = "mt5:MetaQuotes-Demo"
     # Weekend BTC book (Binance public data, paper only). Runs with the engine.
     btc_weekend_enabled: bool = True
+
+    # Telegram alerts (one-way, signals only). Off unless both are set in .env.
+    telegram_bot_token: SecretStr | None = None
+    telegram_chat_id: str | None = None
+    telegram_practice_alerts: bool = True    # also send setups from strategies that FAILED their backtest (labelled)
+    telegram_session_alerts: bool = True     # "London / New York window open" messages
 
     # Only "paper" is allowed. There is no live trading in this codebase.
     trading_mode: Literal["paper"] = "paper"

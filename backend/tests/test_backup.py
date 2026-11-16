@@ -8,7 +8,7 @@ from app.core.backup import backup, sqlite_path
 
 
 def test_backup_copies_data_and_keeps_newest(tmp_path):
-    db = tmp_path / "app.db"
+    db = tmp_path / "journal #1%.db"
     with sqlite3.connect(db) as c:
         c.execute("create table t (x int)")
         c.execute("insert into t values (42)")

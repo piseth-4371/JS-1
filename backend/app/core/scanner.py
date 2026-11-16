@@ -170,7 +170,9 @@ def scan_market(m: ScanMarket, now: int) -> MarketStatus:
     return st
 
 
-def record(s: Session, statuses: list[MarketStatus], chosen: Setup | None, now: int, sources: dict[str, str]) -> None:
+def record(s: Session, statuses: list[MarketStatus], chosen: Setup | None, now: int, sources: dict[str, str]) -> list[Setup]:
+    """Store setups not seen before; returns the new ones (for alerts)."""
+    new: list[Setup] = []
     for st in statuses:
         for x in st.setups:
             exists = s.scalar(select(ScannerSignalRow.id).where(
@@ -184,6 +186,8 @@ def record(s: Session, statuses: list[MarketStatus], chosen: Setup | None, now: 
                                    qualified=x.qualified, shown=x is chosen, reason=x.reason,
                                    data_source=sources[x.market],
                                    execution=ScannerExecutionRow(version=2, costs=asdict(COSTS[x.market]))))
+            new.append(x)
+    return new
 
 
 def resolve(row: ScannerSignalRow, m1, window: Callable, now: int) -> None:
@@ -243,20 +247,28 @@ def resolve(row: ScannerSignalRow, m1, window: Callable, now: int) -> None:
 LATEST: dict = {"scanned_ts": None, "signal": None, "markets": [], "note": "scanner has not run yet"}
 
 
-def run_scan(s: Session, now: int | None = None) -> dict:
+def run_scan(s: Session, now: int | None = None, alerts: list[dict] | None = None) -> dict:
+    """One scan. If `alerts` is a list, new setups and status changes are appended to it (for Telegram)."""
     now = now or int(time.time())
     markets = scan_markets()
     statuses = [scan_market(m, now) for m in markets]
     setups = [x for st in statuses for x in st.setups]
     chosen = pick(setups)
-    record(s, statuses, chosen, now, {m.key: m.source for m in markets})
+    new = record(s, statuses, chosen, now, {m.key: m.source for m in markets})
+    if alerts is not None:
+        alerts += [{"type": "setup", "setup": _setup_dict(x)} for x in new]
     by_key = {m.key: m for m in markets}
     for row in s.scalars(select(ScannerSignalRow).where(ScannerSignalRow.status.in_(("open", "filled")))):
         m = by_key.get(row.market)
         if m is None or row.execution is None:
             continue
+        before = row.status
         m1 = load_m1(m.source, m.symbol, row.bar_close_ts, now - 59)
         resolve(row, m1[m1["ts"] + 60 <= now], m.window, now)
+        if alerts is not None and row.status != before:
+            alerts.append({"type": "outcome", "market": row.market, "strategy": row.strategy,
+                           "side": "LONG" if row.side == 1 else "SHORT", "status": row.status, "r": row.r,
+                           "ts": row.resolved_ts or row.filled_ts or now, "qualified": row.qualified})
     open_now = [st for st in statuses if st.state == "open"]
     if chosen:
         note = "Signal from a strategy that passed its backtest. Not a guarantee: past results can fail."

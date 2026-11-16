@@ -6,7 +6,7 @@ export async function getJSON(path, { timeoutMs = 10000 } = {}) {
   try {
     const r = await fetch(path, { cache: "no-store", signal: controller.signal });
     if (!r.ok) throw new Error(`${path} -> HTTP ${r.status}`);
-    return r.json();
+    return await r.json();
   } finally {
     clearTimeout(timer);
   }

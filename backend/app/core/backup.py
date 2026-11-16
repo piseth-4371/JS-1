@@ -25,7 +25,7 @@ def backup(db_file: Path, out_dir: Path, keep: int = 7, now: datetime | None = N
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = (now or datetime.now(timezone.utc)).strftime("%Y%m%d_%H%M%S")
     target = out_dir / f"app_{stamp}.db"
-    src = sqlite3.connect(f"file:{db_file}?mode=ro", uri=True)
+    src = sqlite3.connect(f"{db_file.resolve().as_uri()}?mode=ro", uri=True)
     dst = sqlite3.connect(target)
     try:
         src.backup(dst)
