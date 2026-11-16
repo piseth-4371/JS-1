@@ -95,6 +95,7 @@ and it produces strategies that only work on the past.
 | NAS100 daily trend (pre-registered) | 2 | Both fail (do not beat random timing; too few trades) |
 | NAS100 intraday momentum (published research, pre-registered) | 1 | Fails: about 0R even before costs (1,338 trades) |
 | Gold intraday (same 7 rules, pre-registered) | 7 | All fail |
+| NAS100 intraday + volatility regime filter (pre-registered 2026-11-16) | 7 | All fail; made validation worse for 5 of 7 |
 
 ## What this means for you
 
