@@ -72,18 +72,25 @@ class ClusterBootstrap:
     share_le0: float          # share of resamples with average R <= 0 (not a probability of no edge)
 
 
-def cluster_bootstrap(rs, groups, runs: int = 5000, seed: int = 11) -> ClusterBootstrap:
-    """Resample whole groups (e.g. weeks) with replacement; the average is over all trades drawn."""
+def cluster_means(rs, groups, runs: int = 5000, seed: int = 11) -> np.ndarray:
+    """Averages of `runs` resamples that draw whole groups (e.g. weeks) with replacement."""
     rs = np.asarray(rs, dtype=float)
-    if len(rs) == 0:
-        return ClusterBootstrap(runs, 0, 0.0, 0.0, 0.0, 1.0)
     _, inv = np.unique(np.asarray(groups), return_inverse=True)
     sums = np.bincount(inv, weights=rs)
     counts = np.bincount(inv).astype(float)
     g = len(sums)
     rng = np.random.default_rng(seed)
     idx = rng.integers(0, g, size=(runs, g))
-    means = sums[idx].sum(axis=1) / counts[idx].sum(axis=1)
+    return sums[idx].sum(axis=1) / counts[idx].sum(axis=1)
+
+
+def cluster_bootstrap(rs, groups, runs: int = 5000, seed: int = 11) -> ClusterBootstrap:
+    """Resample whole groups (e.g. weeks) with replacement; the average is over all trades drawn."""
+    rs = np.asarray(rs, dtype=float)
+    if len(rs) == 0:
+        return ClusterBootstrap(runs, 0, 0.0, 0.0, 0.0, 1.0)
+    g = len(np.unique(np.asarray(groups)))
+    means = cluster_means(rs, groups, runs, seed)
     return ClusterBootstrap(runs, g, float(rs.mean()), float(np.percentile(means, 2.5)),
                             float(np.percentile(means, 97.5)), float(np.mean(means <= 0)))
 

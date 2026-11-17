@@ -83,6 +83,34 @@ For the daily trend test the rules and the pass mark were committed to git **bef
 rules after seeing the result. Changing settings until the backtest looks good is called overfitting,
 and it produces strategies that only work on the past.
 
+## Lesson 8 — Where profit and loss really come from (bid/ask re-test, 2026-11-17)
+
+You always **buy at the ask** (the higher price) and **sell at the bid** (the lower one). The gap is the spread,
+and you pay it on every trade, win or lose. Earlier backtests used only bid prices and subtracted a 1.5-point
+spread afterwards. The re-test (`bidask_full_report.md`) uses real Dukascopy bid **and** ask prices and splits
+each result into parts:
+
+- **Gross expectancy** = average R per trade *before* costs: the strategy's raw skill.
+- **Costs** = spread + slippage (+ fees, 0 here), turned into R by dividing by the stop size. A 1.5-point spread on
+  a 15-point stop is 0.10R on every trade.
+- **Net expectancy** = gross − costs. This is what an account would actually keep (in this history).
+- Using the ask can also change **which trades happen**: a buy limit only fills if the *ask* reaches it. The report
+  shows that effect separately from the cost on identical trades.
+
+What 2023 showed so far: costs take about 0.05–0.16R per trade; several strategies are near 0 or negative even
+*before* costs; London strategies pay about twice the spread (~3 points before New York opens).
+
+**Uncertainty:** an average from 50–80 trades can be off by ±0.3R or more. The report re-draws whole weeks of
+trades 5,000 times to show a range, and widens it because seven strategies were tested at once (one of seven can
+look good by luck). If the range includes 0, the data cannot tell a small edge from none.
+
+**Three possible answers:** *negative observed expectancy* (lost money on average in at least one period),
+*inconclusive* (positive but could be luck), *passes the research criteria* (positive in both periods, clear of 0,
+and still positive with doubled costs). Even a pass only earns a one-time final test on locked 2025+ data — never
+live trading by itself.
+
+**Takeaway:** look at gross first. If a strategy does not make money before costs, no cost trick can save it.
+
 ---
 
 ## Scoreboard
