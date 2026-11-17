@@ -72,3 +72,12 @@ spread cost and slippage cost and fees (R per trade), net expectancy (B and R), 
 - **Inconclusive** = neither of the above.
 - **Incomplete data — no verdict** = coverage requirement not met.
 No setting, year, filter or session is chosen after seeing results. Nothing here changes `scanner.QUALIFIED`.
+
+## Amendment 1 (2026-11-17, before any strategy result was computed)
+Data check 2 as written stopped the first run: in the 15 US/UK-mismatch weekdays of 2023 the minute with the
+largest median move was 09:56, not 09:30. Inspection (no strategy run had happened): the median 1-minute move jumps
+from 3.58 at 09:29 to 9.15 at 09:30, while 08:30 = 4.55 and 10:30 = 5.08. A one-hour clock error would put the jump
+at 08:30 or 10:30, so the clock is right; March 2023 (US banking stress) made the whole first half hour volatile and
+one later minute won by chance. The single-top-minute rule is too fragile for ~15-day samples. **Replacement rule,
+which tests the real failure (a DST hour shift):** per year and regime, median move at 09:30 ≥ 1.5 × the median at
+09:29, and greater than the medians at 08:30 and 10:30. The top minute is still reported for information.
