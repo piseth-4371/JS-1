@@ -10,9 +10,9 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 
 ## Summary
 
-- Experiments: **17** (10 strategy tests or filters, 7 measurements or checks).
+- Experiments: **18** (10 strategy tests or filters, 8 measurements or checks).
 - Strategy evaluations so far: **52**. Passed: **0**.
-- Outcomes: Failed 9, Measured (no pass/fail) 7, In progress (no verdict) 1.
+- Outcomes: Failed 9, Measured (no pass/fail) 8, In progress (no verdict) 1.
 - Journal check: **OK**.
 
 | id | date | experiment | kind | pre-registered | evaluations | outcome |
@@ -34,6 +34,7 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 | E15 | 2026-11-19 | Exness vs Dukascopy spread, 2023 | measurement | yes, before results | 0 | Measured (no pass/fail) |
 | E16 | 2026-11-19 | Exness spread by year, 2019-2024 | measurement | yes, before results | 0 | Measured (no pass/fail) |
 | E17 | 2026-11-19 | Slow multi-market trend (10 markets, monthly) vs benchmarks | strategy test | yes, before results | 1 | Failed |
+| E18 | 2026-11-19 | Exness cost gate: NAS100 backtest trades re-priced with Exness spread | measurement | yes, before results | 0 | Measured (no pass/fail) |
 
 ## Details
 
@@ -172,6 +173,14 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 - **Data:** FRED daily spot prices and index levels, 10 markets; dev 1988-2010, validation 2011-2024 (2025+ not downloaded)
 - **Outcome:** Failed. Negative observed result. Net Sharpe +0.32 in 1988-2010 (range -0.07 to +0.71) but -0.30 in 2011-2024. Before costs +0.73 and +0.13: the assumed costs and 2% financing removed the small validation edge. Beat 100% and 94% of random-direction portfolios, and lost far less than always long in its worst months. Amendment 1 (commit 669cbe5) excluded one negative WTI price before any result.
 - **Report:** `docs/multimarket_trend_report.md`
+
+### E18 — Exness cost gate: NAS100 backtest trades re-priced with Exness spread
+
+- **Question:** Would the 7 NAS100 strategies still look the same if the 1.5-point backtest spread were replaced by the 2.94-point spread measured on Exness USTEC (p90 stress 3.29/3.65)?
+- **Rules:** `docs/exness_cost_gate_preregistration.md` (commit 5e8744a)
+- **Data:** backend/data/backtest_trades.csv (bid-only HistData backtest, 4,774 trades 2019-2024); Exness USTEC 2021-2023 spread levels
+- **Outcome:** Measured (no pass/fail). Every strategy got worse: on average 0.109R more cost per trade. All 7 had already failed their main tests, so none is eligible. The only positive split, sweep_mss_fvg 2023-24, fell from +0.150R to +0.100R (stress +0.075R) while its 2019-22 split is -0.238R. The gate is now a permanent extra rule before anything can be added to scanner.QUALIFIED.
+- **Report:** `docs/exness_cost_gate_report.md`
 
 ## Adding a new experiment
 
