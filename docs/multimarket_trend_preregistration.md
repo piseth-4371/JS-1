@@ -81,3 +81,10 @@ owner-approved plan using tradable instruments and real costs, and a one-time te
 No setting in this file is changed after the results are seen.
 
 Output: `docs/multimarket_trend_report.md`, made by `backend/scripts/multimarket_trend_test.py`.
+
+## Amendment 1 (2026-11-19, before any result was computed)
+The first run stopped while loading data: `DCOILWTICO` has one non-positive value, 2020-04-20 = -36.98 (the real
+negative WTI settlement during the oil futures crash). Log returns cannot be taken of it. Rule added: a value at or
+below 0 is treated as missing (excluded, never replaced) and counted in the data checks. It is the only such value
+in the 10 files. The April 2020 month-end close (positive) is unaffected; the effect is a slightly lower volatility
+estimate, so a slightly larger WTI weight, for decisions made at the end of April 2020. Nothing else changes.
