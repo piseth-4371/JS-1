@@ -99,13 +99,26 @@ function NewsCard({ n }) {
   );
 }
 
-function AnalysisCard({ c, market, preview, previewError, marketError, view }) {
+const CHART_CHOICES = [[null, "Auto"], ["nas100", "NAS100"], ["btc", "BTC"], ["gold", "Gold"]];
+
+function AnalysisCard({ c, market, preview, previewError, marketError, view, chartPick, setChartPick }) {
   const why = c.signal?.reason ?? (c.practice[0] ? `Practice setup: ${c.practice[0].reason}` : c.headline);
   const levels = market?.available ? Object.entries(market.levels ?? {}) : [];
   const fvgs = market?.available ? [...(market.fvgs ?? [])].reverse().slice(0, 3) : [];
   return (
     <div className="card">
-      <div className="label mb-2">3 · Market analysis — why this signal</div>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="label">3 · Market analysis — why this signal</div>
+        <div className="flex overflow-hidden rounded-md ring-1 ring-slate-700" role="group"
+          aria-label="Which market the chart shows (view only)" title="Changes only the chart. Signals are found automatically on all markets.">
+          {CHART_CHOICES.map(([key, label]) => (
+            <button key={label} type="button" aria-pressed={chartPick === key} onClick={() => setChartPick(key)}
+              className={`px-3 py-1 text-xs font-medium ${chartPick === key ? "bg-sky-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <Chart market={market} preview={preview} previewError={previewError} marketError={marketError} view={view} />
@@ -181,7 +194,8 @@ function ResultsCard({ r }) {
   );
 }
 
-export default function SimpleView({ scan, ov, signals, metrics, backendDown, market, preview, previewError, marketError, view }) {
+export default function SimpleView({ scan, ov, signals, metrics, backendDown, market, preview, previewError, marketError, view,
+  chartPick, setChartPick }) {
   const now = Date.now() / 1000;
   const live = backendDown ? null : scan;
   const c = signalCard({ scan: live, ov: backendDown ? null : ov, signals, now });
@@ -191,7 +205,8 @@ export default function SimpleView({ scan, ov, signals, metrics, backendDown, ma
         <SignalCard c={c} />
         <NewsCard n={newsCard(backendDown ? null : ov, now)} />
       </div>
-      <AnalysisCard c={c} market={market} preview={preview} previewError={previewError} marketError={marketError} view={view} />
+      <AnalysisCard c={c} market={market} preview={preview} previewError={previewError} marketError={marketError} view={view}
+        chartPick={chartPick} setChartPick={setChartPick} />
       <ResultsCard r={resultsCard(live, metrics)} />
     </div>
   );

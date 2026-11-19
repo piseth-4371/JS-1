@@ -24,8 +24,10 @@ export default function App() {
   const [backendDown, setBackendDown] = useState(false);
   const [marketError, setMarketError] = useState(null);
   const [previewError, setPreviewError] = useState(null);
-  // No market picker: the chart follows the signal (or practice setup, or open market) automatically.
-  const view = autoMarket(signalCard({ scan: backendDown ? null : scan, ov: backendDown ? null : ov, signals, now: Date.now() / 1000 }), scan, ov);
+  // The chart follows the signal (or practice setup, or open market) automatically, unless the viewer picks a
+  // market to look at. The pick only changes the chart: signals and strategies are never chosen here.
+  const [chartPick, setChartPick] = useState(null);
+  const view = chartPick ?? autoMarket(signalCard({ scan: backendDown ? null : scan, ov: backendDown ? null : ov, signals, now: Date.now() / 1000 }), scan, ov);
   const viewRef = useRef(view);
   viewRef.current = view;
   const analysisSequence = useRef(0);
@@ -150,7 +152,7 @@ export default function App() {
         )}
         <SimpleView scan={scan} ov={ov} signals={signals} metrics={metrics} backendDown={backendDown}
           market={market?.view === view ? market : null} preview={preview} previewError={previewError}
-          marketError={marketError} view={view} />
+          marketError={marketError} view={view} chartPick={chartPick} setChartPick={setChartPick} />
         <footer className="pb-4 text-center text-xs text-slate-500">
           Paper trading only · simulated signals and fills · NAS100, BTC and gold checked automatically · times in New York time (chart clock also shows your local time)
         </footer>

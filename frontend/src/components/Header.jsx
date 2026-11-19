@@ -78,7 +78,7 @@ export default function Header({ ov, market, preview, marketError, previewError,
           tone={loadingMarket ? "muted" : stale ? "warn" : "ok"}
           title="Where the prices come from and the last completed 1-minute bar"
         >
-          {bookInfo?.source ?? "-"} {bookInfo?.symbol ?? ""} ·{" "}
+          {bookInfo ? `${bookInfo.source} ${bookInfo.symbol}` : MARKET_NAME[view] ?? view} ·{" "}
           {loadingMarket ? "loading…" : `last bar ${nyTime(shownMarket?.last_bar_ts)} NY${stale ? " · STALE / closed" : ""}`}
         </Status>
 
