@@ -8,6 +8,7 @@ import ScannerPanel from "./components/ScannerPanel.jsx";
 import SignalPanel from "./components/SignalPanel.jsx";
 import SessionPanel from "./components/SessionPanel.jsx";
 import SimpleView from "./components/SimpleView.jsx";
+import { autoMarket, signalCard } from "./simpleView.js";
 import WhyWaitPanel from "./components/WhyWaitPanel.jsx";
 
 const POLL_MS = 5000; // closed-bar analysis and dashboard panels
@@ -15,7 +16,9 @@ const PREVIEW_POLL_MS = 2000; // display-only quote preview
 const FEEDS = {
   nas100: "/api/market/analysis?hours=12",
   btc: "/api/market/analysis?hours=12&source=binance&symbol=BTCUSDT",
+  gold: "/api/market/analysis?hours=12&symbol=XAUUSD", // scanner-only market, no paper book
 };
+const PREVIEW_MARKETS = ["nas100", "btc"]; // the quote preview exists only for the paper books
 
 export default function App() {
   const [ov, setOv] = useState(null);
@@ -39,7 +42,10 @@ export default function App() {
     setTab(key);
     try { localStorage.setItem("dashboardTab", key); } catch { /* storage blocked: keep the choice for this visit only */ }
   };
-  const view = book ?? ov?.trading_now ?? "nas100";
+  // Simple tab: no market picker - the chart follows the signal (or practice setup, or open market) automatically.
+  const view = tab === "simple"
+    ? autoMarket(signalCard({ scan: backendDown ? null : scan, ov: backendDown ? null : ov, signals, now: Date.now() / 1000 }), scan, ov)
+    : book ?? ov?.trading_now ?? "nas100";
   const viewRef = useRef(view);
   viewRef.current = view;
   const analysisSequence = useRef(0);
@@ -94,6 +100,7 @@ export default function App() {
 
   const refreshPreview = useCallback(async () => {
     const requestedView = viewRef.current;
+    if (!PREVIEW_MARKETS.includes(requestedView)) return;
     if (previewRequest.current?.view === requestedView) return;
     const request = { view: requestedView, sequence: ++previewSequence.current };
     previewRequest.current = request;
@@ -149,7 +156,7 @@ export default function App() {
     <div className="min-h-screen">
       <Header ov={ov} market={market} preview={preview} marketError={marketError} previewError={previewError}
         refresh={refresh} setError={setError}
-        view={view} book={book} setBook={setBook} bookInfo={bookInfo} />
+        view={view} book={book} setBook={setBook} bookInfo={bookInfo} simple={tab === "simple"} />
       <main className="mx-auto flex max-w-[1600px] flex-col gap-4 p-4">
         {backendDown && (
           <div className="rounded-lg bg-red-600/20 p-3 text-red-200 ring-1 ring-red-500/40">

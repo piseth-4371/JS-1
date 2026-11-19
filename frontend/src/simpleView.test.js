@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { newsCard, resultRow, resultsCard, signalCard } from "./simpleView.js";
+import { autoMarket, newsCard, resultRow, resultsCard, signalCard } from "./simpleView.js";
 
 const NOW = 1_800_000_000;
 const setup = (over = {}) => ({ market: "nas100", strategy: "silver_bullet", side: "LONG", entry: 100, stop: 95,
@@ -60,4 +60,14 @@ test("results keep qualified and practice apart and count losses", () => {
   assert.deepEqual([r.practice.wins, r.practice.losses, r.practice.totalR], [3, 7, -2.5]);
   assert.deepEqual([r.paper.wins, r.paper.losses], [2, 2]);
   assert.equal(resultRow(null), null);
+});
+
+test("the chart market is picked automatically", () => {
+  const gold = { market: "gold" };
+  assert.equal(autoMarket({ signal: { market: "btc" }, practice: [gold] }, null, { trading_now: "nas100" }), "btc");
+  assert.equal(autoMarket({ signal: null, practice: [gold] }, null, { trading_now: "nas100" }), "gold");
+  assert.equal(autoMarket({ signal: null, practice: [] }, null, { trading_now: "btc" }), "btc");
+  const s = { markets: [{ key: "nas100", state: "closed" }, { key: "gold", state: "open" }] };
+  assert.equal(autoMarket({ signal: null, practice: [] }, s, { trading_now: null }), "gold");
+  assert.equal(autoMarket(null, null, null), "nas100");
 });

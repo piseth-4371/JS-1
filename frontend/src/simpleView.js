@@ -24,6 +24,15 @@ export function signalCard({ scan, ov, signals = [], now }) {
   };
 }
 
+// Which market the Simple view's chart shows, chosen automatically (no picker):
+// the signal's market, else the first practice setup's, else the market trading now, else the first open one.
+export const CHART_MARKETS = ["nas100", "btc", "gold"];
+export function autoMarket(card, scan, ov) {
+  const pick = [card?.signal?.market, card?.practice?.[0]?.market, ov?.trading_now,
+    ...(scan?.markets ?? []).filter((m) => m.state === "open").map((m) => m.key)];
+  return pick.find((k) => CHART_MARKETS.includes(k)) ?? "nas100";
+}
+
 // News: is entry blocked now, does the calendar cover today, and the next events.
 export function newsCard(ov, now, limit = 5) {
   const n = ov?.news;

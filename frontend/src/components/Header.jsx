@@ -14,7 +14,9 @@ function Status({ tone = "muted", title, children }) {
   );
 }
 
-export default function Header({ ov, market, preview, marketError, previewError, refresh, setError, view, book, setBook, bookInfo }) {
+const MARKET_NAME = { nas100: "NAS100", btc: "BTC", gold: "Gold" };
+
+export default function Header({ ov, market, preview, marketError, previewError, refresh, setError, view, book, setBook, bookInfo, simple = false }) {
   const [busy, setBusy] = useState(false);
 
   const act = async (fn) => {
@@ -53,6 +55,11 @@ export default function Header({ ov, market, preview, marketError, previewError,
           PAPER ONLY · live off
         </span>
 
+        {simple ? (
+          <span className="text-xs text-slate-400" title="The scanner checks NAS100, BTC and gold with every strategy by itself. Nothing to choose.">
+            Auto: watching NAS100, BTC and gold · chart: <b className="text-slate-200">{MARKET_NAME[view] ?? view}</b>
+          </span>
+        ) : (
         <div className="flex overflow-hidden rounded-md ring-1 ring-slate-700" role="group" aria-label="Which market to show">
           {(ov?.markets ?? [{ key: "nas100" }, { key: "btc" }]).map((m) => (
             <button
@@ -67,8 +74,10 @@ export default function Header({ ov, market, preview, marketError, previewError,
             </button>
           ))}
         </div>
+        )}
 
         <div className="ml-auto flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          {!simple && (<>
           <select
             aria-label="Strategy for this market"
             className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm sm:flex-none"
@@ -90,6 +99,7 @@ export default function Header({ ov, market, preview, marketError, previewError,
           >
             Auto: {!ov ? "…" : ov.auto_trading ? "ON" : "OFF"}
           </button>
+          </>)}
 
           {ov?.kill_switch ? (
             <button className="btn bg-amber-600 text-white" disabled={busy}
