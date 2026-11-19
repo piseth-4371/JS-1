@@ -178,5 +178,15 @@
     "evaluations": 0, "outcome": "measured",
     "result": "Every strategy got worse: on average 0.109R more cost per trade. All 7 had already failed their main tests, so none is eligible. The only positive split, sweep_mss_fvg 2023-24, fell from +0.150R to +0.100R (stress +0.075R) while its 2019-22 split is -0.238R. The gate is now a permanent extra rule before anything can be added to scanner.QUALIFIED.",
     "reports": ["docs/exness_cost_gate_report.md"]
+  },
+  {
+    "id": "E19", "date": "2026-11-19", "kind": "strategy test",
+    "title": "Turn of the month: hold the Nasdaq over each month end (own idea)",
+    "question": "Does holding the Nasdaq Composite from the second-to-last trading day of a month to the 3rd trading day of the next earn more than random timing, after Exness-like spread and overnight financing?",
+    "rules": "docs/turn_of_month_preregistration.md", "rules_commit": "bd2e15c",
+    "data": "FRED NASDAQCOM daily closes; dev 1971-1999, validation 2000-2024 (2025+ locked)",
+    "evaluations": 1, "outcome": "inconclusive",
+    "result": "Inconclusive, the best result so far but not a pass. 1971-1999 passed every check (+0.50% per trade after costs, range +0.23% to +0.74%, beat 100% of random timing). 2000-2024 stayed positive (+0.19% per trade, stress +0.06%) but the range crossed zero (-0.13% to +0.52%) and it beat only 86% of random timing (95% required). The effect looks smaller since it became famous.",
+    "reports": ["docs/turn_of_month_report.md"]
   }
 ]
