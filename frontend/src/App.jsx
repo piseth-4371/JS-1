@@ -7,6 +7,7 @@ import Overview from "./components/Overview.jsx";
 import ScannerPanel from "./components/ScannerPanel.jsx";
 import SignalPanel from "./components/SignalPanel.jsx";
 import SessionPanel from "./components/SessionPanel.jsx";
+import WhyWaitPanel from "./components/WhyWaitPanel.jsx";
 
 const POLL_MS = 5000; // closed-bar analysis and dashboard panels
 const PREVIEW_POLL_MS = 2000; // display-only quote preview
@@ -162,6 +163,7 @@ export default function App() {
           </div>
         )}
         <SessionPanel scan={scan} backendDown={backendDown} view={view} />
+        <WhyWaitPanel scan={scan} ov={ov} signals={signals} backendDown={backendDown} />
         <ScannerPanel scan={scan} />
         <Overview ov={ov} />
         <div className="grid gap-4 lg:grid-cols-3">
