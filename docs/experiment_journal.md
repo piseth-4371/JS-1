@@ -10,9 +10,9 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 
 ## Summary
 
-- Experiments: **16** (9 strategy tests or filters, 7 measurements or checks).
-- Strategy evaluations so far: **51**. Passed: **0**.
-- Outcomes: Failed 8, Measured (no pass/fail) 7, In progress (no verdict) 1.
+- Experiments: **17** (10 strategy tests or filters, 7 measurements or checks).
+- Strategy evaluations so far: **52**. Passed: **0**.
+- Outcomes: Failed 9, Measured (no pass/fail) 7, In progress (no verdict) 1.
 - Journal check: **OK**.
 
 | id | date | experiment | kind | pre-registered | evaluations | outcome |
@@ -33,6 +33,7 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 | E14 | 2026-11-17 | Paper engine vs backtester replay | execution check | yes, before results | 0 | Measured (no pass/fail) |
 | E15 | 2026-11-19 | Exness vs Dukascopy spread, 2023 | measurement | yes, before results | 0 | Measured (no pass/fail) |
 | E16 | 2026-11-19 | Exness spread by year, 2019-2024 | measurement | yes, before results | 0 | Measured (no pass/fail) |
+| E17 | 2026-11-19 | Slow multi-market trend (10 markets, monthly) vs benchmarks | strategy test | yes, before results | 1 | Failed |
 
 ## Details
 
@@ -163,6 +164,14 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 - **Data:** Exness USTEC ticks 2019-2024, checked against HistData NSXUSD
 - **Outcome:** Measured (no pass/fail). Usable: 2021, 2022, 2023 (median 2.75-2.94 pts). Not usable: 2019 and 2020 (too few complete days), 2024 (price gap to HistData 17.29 pts). Exness cannot cover both test periods.
 - **Report:** `docs/exness_spread_years_report.md`
+
+### E17 — Slow multi-market trend (10 markets, monthly) vs benchmarks
+
+- **Question:** Does a 12-month trend rule across stocks, energy and currencies earn a positive return after costs, and beat holding the same markets or random directions?
+- **Rules:** `docs/multimarket_trend_preregistration.md` (commit 3d5fd49)
+- **Data:** FRED daily spot prices and index levels, 10 markets; dev 1988-2010, validation 2011-2024 (2025+ not downloaded)
+- **Outcome:** Failed. Negative observed result. Net Sharpe +0.32 in 1988-2010 (range -0.07 to +0.71) but -0.30 in 2011-2024. Before costs +0.73 and +0.13: the assumed costs and 2% financing removed the small validation edge. Beat 100% and 94% of random-direction portfolios, and lost far less than always long in its worst months. Amendment 1 (commit 669cbe5) excluded one negative WTI price before any result.
+- **Report:** `docs/multimarket_trend_report.md`
 
 ## Adding a new experiment
 
