@@ -1,5 +1,5 @@
 import { money, num, nyTime } from "../api.js";
-import { newsCard, resultsCard, signalCard } from "../simpleView.js";
+import { newsCard, resultsCard, signalCard, volatilityCard } from "../simpleView.js";
 import { strategyLabel } from "../strategies.js";
 import Chart from "./Chart.jsx";
 
@@ -128,7 +128,48 @@ function NewsCard({ n }) {
   );
 }
 
-const CHART_CHOICES = [[null, "Auto"], ["nas100", "NAS100"], ["btc", "BTC"], ["gold", "Gold"]];
+const VOL_TONE = {
+  calm: "bg-sky-500/10 text-sky-200 ring-sky-500/30",
+  normal: "bg-slate-800/50 text-slate-200 ring-slate-700",
+  busy: "bg-amber-500/15 text-amber-200 ring-amber-500/30",
+  "very wild": "bg-red-500/15 text-red-200 ring-red-500/30",
+};
+
+function VolatilityCard({ v }) {
+  return (
+    <div className="card">
+      <div className="label mb-2">3 · Volatility now</div>
+      {!v.known ? (
+        <p className="text-sm text-slate-400">Volatility unknown (no data from the backend).</p>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-3">
+          {v.rows.map((r) => (
+            <div key={r.key} className={`rounded-md p-2 ring-1 ${r.ok ? VOL_TONE[r.level] : "bg-slate-800/30 text-slate-400 ring-slate-800"}`}>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-sm font-semibold">{r.name}</span>
+                {r.ok && <span className="text-xs font-semibold uppercase">{r.level}</span>}
+              </div>
+              {r.ok ? (
+                <>
+                  <div className="mt-1 font-mono text-lg">{r.x.toFixed(1)}× normal</div>
+                  <div className="text-xs opacity-80">
+                    Last hour {r.rangePct.toFixed(2)}% · normal {r.normalPct.toFixed(2)}% · to {nyTime(r.asOf)} NY
+                  </div>
+                </>
+              ) : <div className="mt-1 text-xs">{r.text}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="mt-2 text-xs text-slate-500">
+        Last hour's high-low range compared with the same New York hour on the previous 20 days. Calm under 0.7×,
+        busy from 1.5×, very wild from 2.5×. It shows how big moves are, never which way. Nothing uses it to trade.
+      </p>
+    </div>
+  );
+}
+
+const CHART_CHOICES =[[null, "Auto"], ["nas100", "NAS100"], ["btc", "BTC"], ["gold", "Gold"]];
 const TF_CHOICES = [[1, "1m"], [5, "5m"], [15, "15m"], [60, "1h"], [240, "4h"]];
 
 function Buttons({ choices, value, onPick, label }) {
@@ -152,7 +193,7 @@ function AnalysisCard({ c, market, preview, previewError, marketError, view, cha
   return (
     <div className="card">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <div className="label">3 · Market analysis — why this signal</div>
+        <div className="label">4 · Market analysis — why this signal</div>
         <div className="flex flex-wrap gap-2">
           <Buttons choices={CHART_CHOICES} value={chartPick} onPick={setChartPick} label="Which market the chart shows (view only)" />
           <Buttons choices={TF_CHOICES} value={tf} onPick={setTf} label="Chart timeframe (view only)" />
@@ -236,7 +277,7 @@ function TomLine({ t }) {
 function ResultsCard({ r }) {
   return (
     <div className="card">
-      <div className="label mb-2">4 · Results summary</div>
+      <div className="label mb-2">5 · Results summary</div>
       <div className="flex flex-col gap-2">
         <ResultLine title="Signals from strategies that passed their test" r={r.qualified}
           tone="bg-sky-500/10 text-sky-100 ring-sky-500/30" />
@@ -274,6 +315,7 @@ export default function SimpleView({ scan, ov, signals, metrics, backendDown, ma
         <SignalCard c={c} />
         <NewsCard n={newsCard(backendDown ? null : ov, now)} />
       </div>
+      <VolatilityCard v={volatilityCard(live)} />
       <AnalysisCard c={c} market={market} preview={preview} previewError={previewError} marketError={marketError} view={view}
         chartPick={chartPick} setChartPick={setChartPick} tf={tf} setTf={setTf} />
       <ResultsCard r={resultsCard(live, metrics)} />

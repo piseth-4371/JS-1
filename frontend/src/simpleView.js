@@ -77,6 +77,29 @@ export function resultsCard(scan, metrics) {
            tom: tomRow(scan?.turn_of_month) };
 }
 
+// Volatility now (backend app/core/volatility.py): last hour's range vs the same New York hour on earlier days.
+// Size only, never direction; no rule uses it.
+const VOL_NAMES = { nas100: "NAS100", gold: "Gold", btc: "BTC" };
+export const VOL_ORDER = ["nas100", "gold", "btc"];
+
+export function volatilityCard(scan) {
+  const v = scan?.volatility;
+  if (!v || !Array.isArray(v.markets)) return { known: false, rows: [] };
+  const byKey = Object.fromEntries(v.markets.map((m) => [m.market, m]));
+  const rows = VOL_ORDER.map((k) => {
+    const m = byKey[k];
+    if (!m) return { key: k, name: VOL_NAMES[k], ok: false, text: "No data." };
+    if (m.state !== "ok" || m.x == null) {
+      const text = m.state === "not enough history" ? "Not enough history yet (needs 10 earlier days)."
+        : "No recent prices (engine off, MT5 closed, or market closed).";
+      return { key: k, name: VOL_NAMES[k], ok: false, text };
+    }
+    return { key: k, name: VOL_NAMES[k], ok: true, x: m.x, level: m.level, rangePct: m.range_pct,
+             normalPct: m.normal_pct, asOf: m.as_of };
+  });
+  return { known: true, rows };
+}
+
 // Turn-of-month paper forward test (backend app/core/tom_forward.py). Never a verdict before 36 trades.
 export function tomRow(t) {
   if (!t || !t.summary) return null;

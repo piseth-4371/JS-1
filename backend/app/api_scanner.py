@@ -10,7 +10,7 @@ from fastapi import APIRouter, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core import news, scanner, tom_forward
+from app.core import news, scanner, tom_forward, volatility
 from app.core.cost_observations import read_observations
 from app.db import get_engine
 from app.models import ScannerSignalRow
@@ -63,8 +63,13 @@ def get_scanner(limit: int = Query(40, ge=1, le=200)) -> dict:
         tom = tom_forward.report(now)
     except Exception as e:                       # never break the scanner card over this
         tom = {"error": type(e).__name__, "trades": [], "summary": None, "next": None}
+    try:
+        vol = volatility.report(now)
+    except Exception as e:                       # display only: never break the scanner card over this
+        vol = {"error": type(e).__name__, "markets": []}
     return {
         "turn_of_month": tom,
+        "volatility": vol,
         **snapshot,
         "qualified_strategies": [{"market": m, "strategy": n, "validation_avg_r": v}
                                  for (m, n), v in scanner.QUALIFIED.items()],

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { autoMarket, newsCard, resultRow, resultsCard, signalCard, tomRow } from "./simpleView.js";
+import { autoMarket, newsCard, resultRow, resultsCard, signalCard, tomRow, volatilityCard } from "./simpleView.js";
 
 const NOW = 1_800_000_000;
 const setup = (over = {}) => ({ market: "nas100", strategy: "silver_bullet", side: "LONG", entry: 100, stop: 95,
@@ -74,6 +74,20 @@ test("turn-of-month row shows the last finished trade and the next one", () => {
   assert.equal(r.verdict, "collecting — no verdict");
   assert.equal(tomRow(null), null);
   assert.equal(resultsCard({ turn_of_month: t }, null).tom.trades, 2);
+});
+
+test("volatility card shows each market or says why not", () => {
+  const scan = { volatility: { markets: [
+    { market: "btc", state: "ok", x: 1.8, level: "busy", range_pct: 0.89, normal_pct: 0.5, as_of: 1 },
+    { market: "nas100", state: "no recent data", x: null },
+    { market: "gold", state: "not enough history", x: null } ] } };
+  const v = volatilityCard(scan);
+  assert.deepEqual(v.rows.map((r) => r.key), ["nas100", "gold", "btc"]);
+  assert.equal(v.rows[2].ok, true);
+  assert.equal(v.rows[2].level, "busy");
+  assert.match(v.rows[0].text, /No recent prices/);
+  assert.match(v.rows[1].text, /Not enough history/);
+  assert.equal(volatilityCard(null).known, false);
 });
 
 test("the chart market is picked automatically", () => {
