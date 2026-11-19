@@ -1,0 +1,162 @@
+[
+  {
+    "id": "E01", "date": "2026-11-13", "kind": "strategy test",
+    "title": "Auto-switch between strategies (weekly walk-forward)",
+    "question": "Does picking last week's best strategy each week beat sticking with one strategy?",
+    "rules": null, "rules_commit": null,
+    "data": "NAS100 1-minute bars, 2019 only",
+    "evaluations": 1, "outcome": "fail",
+    "result": "Worse than the fixed strategies on 2019. Not enabled.",
+    "reports": ["docs/selector_report.md"]
+  },
+  {
+    "id": "E02", "date": "2026-11-13", "kind": "strategy test",
+    "title": "BTC weekend intraday, 5 strategies",
+    "question": "Do the intraday setups make money on Bitcoin at weekends after exchange fees?",
+    "rules": null, "rules_commit": null,
+    "data": "Binance BTCUSDT 1-minute bars 2019-2024; dev 2019-2022, validation 2023-2024",
+    "evaluations": 5, "outcome": "fail",
+    "result": "All 5 fail. About 0R before costs; fees cost 0.4-1.1R per trade.",
+    "reports": ["docs/backtest_report_btc.md", "docs/robustness_report_btc.md"]
+  },
+  {
+    "id": "E03", "date": "2026-11-13", "kind": "filter",
+    "title": "Cost filter: skip trades where cost is more than 20% of risk",
+    "question": "Does skipping small-stop trades, where costs eat the most, turn the NAS100 strategies positive?",
+    "rules": null, "rules_commit": null,
+    "data": "NAS100 1-minute bars; first a partial period, then full 2019-2022",
+    "evaluations": 7, "outcome": "fail",
+    "result": "Fewer losses, still no winner. sweep_mss_fvg looked like +0.15R on the first 18 months but was -0.14R on full 2019-2022 (Lesson 2: small samples lie).",
+    "reports": ["docs/cost_filter_report.md"]
+  },
+  {
+    "id": "E04", "date": "2026-11-14", "kind": "strategy test",
+    "title": "NAS100 intraday, 7 strategies (NY and London), full 2019-2024",
+    "question": "Do the 7 written-down intraday strategies make money after costs in both periods?",
+    "rules": null, "rules_commit": null,
+    "data": "HistData NSXUSD 1-minute bars 2019-2024; dev 2019-2022, validation 2023-2024 (splits fixed in CLAUDE.md before the run)",
+    "evaluations": 7, "outcome": "fail",
+    "result": "No strategy is positive in both periods; averages -0.01R to -0.37R per trade; none robust.",
+    "reports": ["docs/backtest_report.md", "docs/robustness_report.md"]
+  },
+  {
+    "id": "E05", "date": "2026-11-14", "kind": "strategy test",
+    "title": "Daily trend: SMA100 long and Donchian 55/20",
+    "question": "Do slow daily trend rules beat a random-timing control with the same stop and holding time?",
+    "rules": "docs/daily_trend_preregistration.md", "rules_commit": "923b5a6",
+    "data": "HistData NSXUSD daily bars 2019-2024; dev 2019-2022, validation 2023-2024",
+    "evaluations": 2, "outcome": "fail",
+    "result": "Both fail: they do not beat random timing, and only 8-27 trades per period. A rising market made random entries look good (Lesson 4).",
+    "reports": ["docs/daily_trend_report.md"]
+  },
+  {
+    "id": "E06", "date": "2026-11-14", "kind": "strategy test",
+    "title": "Intraday momentum (published time-of-day effect)",
+    "question": "Does the first-half-hour move predict the last-half-hour move on NAS100, as published research reports for other markets?",
+    "rules": "docs/intraday_momentum_preregistration.md", "rules_commit": "406b7fb",
+    "data": "HistData NSXUSD 1-minute bars 2019-2024; dev 2019-2022, validation 2023-2024",
+    "evaluations": 1, "outcome": "fail",
+    "result": "About 0R per trade even before costs (1,338 trades).",
+    "reports": ["docs/intraday_momentum_report.md"]
+  },
+  {
+    "id": "E07", "date": "2026-11-14", "kind": "strategy test",
+    "title": "Gold intraday, the same 7 rules unchanged",
+    "question": "Do the 7 NAS100 rules work on gold without any change?",
+    "rules": "docs/gold_and_scanner_preregistration.md", "rules_commit": "6315eb8",
+    "data": "HistData XAUUSD 1-minute bars 2019-2024; dev 2019-2022, validation 2023-2024",
+    "evaluations": 7, "outcome": "fail",
+    "result": "All 7 fail on gold.",
+    "reports": ["docs/gold_report.md"]
+  },
+  {
+    "id": "E08", "date": "2026-11-16", "kind": "measurement",
+    "title": "Strategy report card",
+    "question": "How large and how certain is each strategy's edge (expected value, range, luck check, Kelly)?",
+    "rules": null, "rules_commit": null,
+    "data": "Existing backtest trades, 2019-2024",
+    "evaluations": 0, "outcome": "measured",
+    "result": "Kelly fraction is 0% for every strategy except sweep_mss_fvg in validation only. Measures edge; creates no signals.",
+    "reports": ["docs/report_card.md"]
+  },
+  {
+    "id": "E09", "date": "2026-11-16", "kind": "filter",
+    "title": "Volatility regime filter (20th-80th percentile)",
+    "question": "Do the strategies work if they only trade on days with normal, not calm or wild, volatility?",
+    "rules": "docs/volatility_filter_preregistration.md", "rules_commit": "67434a7",
+    "data": "HistData NSXUSD 1-minute bars 2019-2024; dev 2019-2022, validation 2023-2024",
+    "evaluations": 7, "outcome": "fail",
+    "result": "All 7 fail; the filter made validation worse for 5 of 7.",
+    "reports": ["docs/volatility_filter_report.md"]
+  },
+  {
+    "id": "E10", "date": "2026-11-16", "kind": "measurement",
+    "title": "Measurement audit and session-validity rule",
+    "question": "Are the backtest measurements sound (data holes, costs, clustered uncertainty, multiple testing)?",
+    "rules": "docs/data_quality_rule.md", "rules_commit": "6664851",
+    "data": "HistData NSXUSD 2019-2024",
+    "evaluations": 0, "outcome": "measured",
+    "result": "2023 fails the session-validity rule on 119 of 256 weekdays. Conclusion unchanged: no edge after costs.",
+    "reports": ["docs/audit_report.md", "docs/data_quality_report.md"]
+  },
+  {
+    "id": "E11", "date": "2026-11-16", "kind": "measurement",
+    "title": "Real bid/ask prices, 2023",
+    "question": "Does the bid-only fill model flatter the results, and what is the real spread by time of day?",
+    "rules": "docs/bidask_retest_preregistration.md", "rules_commit": "8a9c21d",
+    "data": "Dukascopy USATECHIDXUSD bid and ask 1-minute bars, 2023",
+    "evaluations": 7, "outcome": "measured",
+    "result": "The bid-only model is not material. Spread about 1.45 pts in US hours, about 3 pts before 09:30 NY. 6 of 7 strategies at or below 0; silver_bullet +0.32R but its range crosses 0 (unproven).",
+    "reports": ["docs/bidask_retest_report.md"]
+  },
+  {
+    "id": "E12", "date": "2026-11-17", "kind": "measurement",
+    "title": "MT5 demo spread by time of day",
+    "question": "Does the broker demo feed show the same wider spread before the US open as Dukascopy?",
+    "rules": "docs/spread_by_hour_preregistration.md", "rules_commit": "1572f18",
+    "data": "MetaQuotes-Demo USTEC 1-minute bar spread, 73 days",
+    "evaluations": 0, "outcome": "measured",
+    "result": "1.0 pts before the US open, 0.9 in US hours, never above 1.0. The feed looks fixed or capped, so this is weak evidence. Not Exness.",
+    "reports": ["docs/spread_by_hour_report.md"]
+  },
+  {
+    "id": "E13", "date": "2026-11-17", "kind": "strategy test",
+    "title": "Real bid/ask re-test, 7 strategies, 2019-2024",
+    "question": "Does any of the 7 strategies have a reliable advantage with real bid/ask prices, in both periods?",
+    "rules": "docs/bidask_full_preregistration.md", "rules_commit": "f69e58c",
+    "data": "Dukascopy USATECHIDXUSD bid and ask 1-minute bars 2019-2024; dev 2019-2022, validation 2023-2024",
+    "evaluations": 7, "outcome": "incomplete",
+    "result": "Waiting for data. On 2026-11-19 dev coverage was 2% and validation 61%, so there is no verdict. Amendment 1 (commit 390efc1, DST clock check) was made before any strategy result.",
+    "reports": ["docs/bidask_full_report.md"]
+  },
+  {
+    "id": "E14", "date": "2026-11-17", "kind": "execution check",
+    "title": "Paper engine vs backtester replay",
+    "question": "Does the same market data give the same signal, fill, exit and cost in the paper engine and the backtester?",
+    "rules": "docs/paper_vs_backtest_plan.md", "rules_commit": "a1408ee",
+    "data": "MetaQuotes-Demo USTEC 1-minute bars, 23 weekdays 2026-10-14 to 2026-11-13",
+    "evaluations": 0, "outcome": "measured",
+    "result": "Signals 126/126 identical; shared trades 28/28 identical. All 34 one-sided trades trace to the 0.1 minimum lot and its knock-on through the risk rules. No execution bug found.",
+    "reports": ["docs/paper_vs_backtest_report.md"]
+  },
+  {
+    "id": "E15", "date": "2026-11-19", "kind": "measurement",
+    "title": "Exness vs Dukascopy spread, 2023",
+    "question": "Is the Exness tick file trustworthy, and how does its spread compare with Dukascopy and the 1.5-point assumption?",
+    "rules": "docs/exness_spread_check_preregistration.md", "rules_commit": "7fba3c4",
+    "data": "Exness USTEC ticks 2023 and Dukascopy bid/ask 2023",
+    "evaluations": 0, "outcome": "measured",
+    "result": "File passes all checks. Exness median 2.95 pts before the US open (similar to Dukascopy) and 2.93 in US hours (about double Dukascopy's 1.45). The 1.5 assumption is understated.",
+    "reports": ["docs/exness_spread_check_report.md"]
+  },
+  {
+    "id": "E16", "date": "2026-11-19", "kind": "measurement",
+    "title": "Exness spread by year, 2019-2024",
+    "question": "Is the Exness spread similar in every year, and are the yearly files usable?",
+    "rules": "docs/exness_spread_years_preregistration.md", "rules_commit": "0d54a49",
+    "data": "Exness USTEC ticks 2019-2024, checked against HistData NSXUSD",
+    "evaluations": 0, "outcome": "measured",
+    "result": "Usable: 2021, 2022, 2023 (median 2.75-2.94 pts). Not usable: 2019 and 2020 (too few complete days), 2024 (price gap to HistData 17.29 pts). Exness cannot cover both test periods.",
+    "reports": ["docs/exness_spread_years_report.md"]
+  }
+]
