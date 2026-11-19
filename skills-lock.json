@@ -1,22 +1,6 @@
 {
   "version": 2,
   "skills": {
-    "alternatives": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/alternatives/SKILL.md",
-      "computedHash": "7941ccfed0c8d443b3a2d9822b1f23b7153fb7c15787007c694ec8cb4ead7469",
-      "installMode": "copy"
-    },
-    "asset-allocation": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/asset-allocation/SKILL.md",
-      "computedHash": "bccd08b28f02f9834b2930941bb76aed04b9d897d7428c16d586c3936aafdcd0",
-      "installMode": "copy"
-    },
     "bet-sizing": {
       "source": "JoelLewis/finance_skills",
       "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
@@ -31,14 +15,6 @@
       "sourceType": "github",
       "skillPath": "plugins/wealth-management/skills/commodities/SKILL.md",
       "computedHash": "812dda148130007da9f99f5b175e87e1a5852c356c9c1b6ee28ba0f23ea59260",
-      "installMode": "copy"
-    },
-    "counterparty-risk": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/trading-operations/skills/counterparty-risk/SKILL.md",
-      "computedHash": "4ae4ab5437180f344f371e0531563466467d682cba6e0af0b16eebb44533ccab",
       "installMode": "copy"
     },
     "currencies-and-fx": {
@@ -65,60 +41,12 @@
       "computedHash": "253e09f9a7eeba8f6c916a3e6cf9db99743687ab1f349e505c307d5937bbb38a",
       "installMode": "copy"
     },
-    "diversification": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/diversification/SKILL.md",
-      "computedHash": "d4cee4975e1c0b974259cb4ff250f56ec6990e683db39c7e2e33e1b29ee7c1d7",
-      "installMode": "copy"
-    },
     "emergency-fund": {
       "source": "JoelLewis/finance_skills",
       "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
       "sourceType": "github",
       "skillPath": "plugins/wealth-management/skills/emergency-fund/SKILL.md",
       "computedHash": "38dbfe60bb4cb6676f01eeb67da470983dec8c4d172f4ea76b1be8a76075f050",
-      "installMode": "copy"
-    },
-    "equities": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/equities/SKILL.md",
-      "computedHash": "e30114e4ff299f8c81b3a15978f75c9acfb03624d27d8791cfe9d539acc45f5d",
-      "installMode": "copy"
-    },
-    "equity-compensation": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/equity-compensation/SKILL.md",
-      "computedHash": "aa9f08075b8b598267e93939e8178e8a3806e51eb743ede9fd780f3d383fd6ef",
-      "installMode": "copy"
-    },
-    "estate-gifting": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/estate-gifting/SKILL.md",
-      "computedHash": "fd3ef20a3198d3362c298b4a0fc585f21525b6dc6143fc7d6d3dd005f8fb9942",
-      "installMode": "copy"
-    },
-    "exchange-connectivity": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/trading-operations/skills/exchange-connectivity/SKILL.md",
-      "computedHash": "5d091370a944f13ae4ebe69e7c1e4b7712e0696af79c0b52fdb72534fcfa0ffd",
-      "installMode": "copy"
-    },
-    "factor-investing": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/factor-investing/SKILL.md",
-      "computedHash": "c4aaa63b5e8159bd145060540158cefd16a8ce55d43f8392e856ce2030e9d965",
       "installMode": "copy"
     },
     "finance-psychology": {
@@ -129,108 +57,12 @@
       "computedHash": "0c4f175d5a0130421fad95915079c55a8ee0a87341f18912bb019dba5280b5a0",
       "installMode": "copy"
     },
-    "financial-statements": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/financial-statements/SKILL.md",
-      "computedHash": "bd5eda6e80b65f769f927f31839ec5311a4617884e2b40ba7667bed0df483a5e",
-      "installMode": "copy"
-    },
-    "fixed-income-corporate": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/fixed-income-corporate/SKILL.md",
-      "computedHash": "0644d6e1de602730d6c46644516758c675d097ea70748bfcb3d91a4dbd74804b",
-      "installMode": "copy"
-    },
-    "fixed-income-municipal": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/fixed-income-municipal/SKILL.md",
-      "computedHash": "a804cb9404424a71042d9c5076faf68353f057e5d47a4bfe690dabd95f350270",
-      "installMode": "copy"
-    },
-    "fixed-income-sovereign": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/fixed-income-sovereign/SKILL.md",
-      "computedHash": "b2de6099d462dffe66a579cc2b197c80f0a05a7ea38c48416e14781e51486428",
-      "installMode": "copy"
-    },
-    "fixed-income-structured": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/fixed-income-structured/SKILL.md",
-      "computedHash": "20f433dc8c090ac94fe9d2d3120bd4cc0ab3f0b74e9d0b0cbb4dec28dd106f6e",
-      "installMode": "copy"
-    },
-    "forward-risk": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/forward-risk/SKILL.md",
-      "computedHash": "f8a9b9abbf7dfdd0aed72522e0d6685f1ab371addcb008f17cfe644c74339007",
-      "installMode": "copy"
-    },
-    "fund-vehicles": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/fund-vehicles/SKILL.md",
-      "computedHash": "76da95f788ab11ae084df6b72ca02604e0b73f891d283c8ceeb5a8508869abcd",
-      "installMode": "copy"
-    },
     "historical-risk": {
       "source": "JoelLewis/finance_skills",
       "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
       "sourceType": "github",
       "skillPath": "plugins/wealth-management/skills/historical-risk/SKILL.md",
       "computedHash": "d23270a0198006ff9fc26c112ca0bdfc87b7a3a29a0c38b5691700dd04247ffa",
-      "installMode": "copy"
-    },
-    "insurance-planning": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/insurance-planning/SKILL.md",
-      "computedHash": "c014f38e52036517882c0b78afc0c0f2b9258c494f157c9fb9e01e0af5295c17",
-      "installMode": "copy"
-    },
-    "investment-policy": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/investment-policy/SKILL.md",
-      "computedHash": "eb65c01593710a2f35356dfd0bcd3bfd2c8b5278311d1f603ecb6f624176b07c",
-      "installMode": "copy"
-    },
-    "lending": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/lending/SKILL.md",
-      "computedHash": "7b927a4f01265074a043198ebdd164807a0790683410896f615475dca2b5dc05",
-      "installMode": "copy"
-    },
-    "liquidity-management": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/liquidity-management/SKILL.md",
-      "computedHash": "a50c6ae336fd215c1b97d2dfea721967d67e8307a1b21d2b2737f14cc6fac569",
-      "installMode": "copy"
-    },
-    "margin-operations": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/trading-operations/skills/margin-operations/SKILL.md",
-      "computedHash": "e528fb153d8f45d0f8da4be29e7d112a0f44fece0e109ddd5ff365605de3290e",
       "installMode": "copy"
     },
     "operational-risk": {
@@ -241,22 +73,6 @@
       "computedHash": "d7df2585c101257661315a5c0edf0739f6a3d9331c1070bcff21139f576cc094",
       "installMode": "copy"
     },
-    "order-lifecycle": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/trading-operations/skills/order-lifecycle/SKILL.md",
-      "computedHash": "c0523541d232fba742596d3e993386215e4c102daaca1a0ca6a7b7224a9d0031",
-      "installMode": "copy"
-    },
-    "performance-attribution": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/performance-attribution/SKILL.md",
-      "computedHash": "681dac7338d96fed9bfba330e2c486841effc9c990bd930de374615f97d1a403",
-      "installMode": "copy"
-    },
     "performance-metrics": {
       "source": "JoelLewis/finance_skills",
       "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
@@ -265,68 +81,12 @@
       "computedHash": "0460afb9003cd80d007f9afc09ca41173f043ffbf7aa8a3b88119fdb5d8183d7",
       "installMode": "copy"
     },
-    "performance-reporting": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/performance-reporting/SKILL.md",
-      "computedHash": "ec0858727aa3cd6035f70d126c2bb305605288200274040d6426329f7a5236d1",
-      "installMode": "copy"
-    },
-    "post-trade-compliance": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/trading-operations/skills/post-trade-compliance/SKILL.md",
-      "computedHash": "78cc13edc5b0438523c9236e689ca899830385b75c2aebcf5dafcb3762d13a96",
-      "installMode": "copy"
-    },
     "pre-trade-compliance": {
       "source": "JoelLewis/finance_skills",
       "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
       "sourceType": "github",
       "skillPath": "plugins/trading-operations/skills/pre-trade-compliance/SKILL.md",
       "computedHash": "554e36233606d4b3c5ddc152d3ccb4d6791a7a965bb97d50015a9f0383bae0b9",
-      "installMode": "copy"
-    },
-    "qualitative-valuation": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/qualitative-valuation/SKILL.md",
-      "computedHash": "7530981c35ee904bc69b7b2c54189d45584e2647ddd1816acfdde9435b28eddc",
-      "installMode": "copy"
-    },
-    "quantitative-valuation": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/quantitative-valuation/SKILL.md",
-      "computedHash": "b1ca4bc61b2edfdcae508d3e60ee382ab161af3f77bc4ee8543a51a4e8b66256",
-      "installMode": "copy"
-    },
-    "real-assets": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/real-assets/SKILL.md",
-      "computedHash": "3d939a5befd95da96511062d0d1d168c5128afdcc11633c136398d19ec181629",
-      "installMode": "copy"
-    },
-    "rebalancing": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/rebalancing/SKILL.md",
-      "computedHash": "fd51253f42197a42748c89428ed29288c9e5f9301a20092bd715f457a1c0dd16",
-      "installMode": "copy"
-    },
-    "retirement-decumulation": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/retirement-decumulation/SKILL.md",
-      "computedHash": "217b44bfe4d7cdc5e40fe2d19fdecdf4a7fbbb81e61a5490e52aa0f06d445134",
       "installMode": "copy"
     },
     "return-calculations": {
@@ -345,36 +105,12 @@
       "computedHash": "33d72c22146493c4943e9ce472869858ba0a22080100a81fd7f2a6220572e115",
       "installMode": "copy"
     },
-    "settlement-clearing": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/trading-operations/skills/settlement-clearing/SKILL.md",
-      "computedHash": "d8aba7d7ee4261939f492713671a9860bbd6216079e2ddf75a2ed2b78a4a4b85",
-      "installMode": "copy"
-    },
     "statistics-fundamentals": {
       "source": "JoelLewis/finance_skills",
       "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
       "sourceType": "github",
       "skillPath": "plugins/core/skills/statistics-fundamentals/SKILL.md",
       "computedHash": "6f1dbba1de865ba154368c0713112b6d77136bdf2b633a904a40075637221b1e",
-      "installMode": "copy"
-    },
-    "tax-efficiency": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/tax-efficiency/SKILL.md",
-      "computedHash": "b54cf58f19b0c44625c651e145e3a75dab507ab5c9e5318b07eb71ba0f05ba15",
-      "installMode": "copy"
-    },
-    "tax-loss-harvesting": {
-      "source": "JoelLewis/finance_skills",
-      "commit": "5c498eacf7057e31238c4c5a8012a1afe9ec7c8a",
-      "sourceType": "github",
-      "skillPath": "plugins/wealth-management/skills/tax-loss-harvesting/SKILL.md",
-      "computedHash": "09d01ea60f345552880a1271f9a75de3a46e74ba3769d095e4c20d5b79cda91c",
       "installMode": "copy"
     },
     "time-value-of-money": {
