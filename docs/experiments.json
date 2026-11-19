@@ -188,5 +188,25 @@
     "evaluations": 1, "outcome": "inconclusive",
     "result": "Inconclusive, the best result so far but not a pass. 1971-1999 passed every check (+0.50% per trade after costs, range +0.23% to +0.74%, beat 100% of random timing). 2000-2024 stayed positive (+0.19% per trade, stress +0.06%) but the range crossed zero (-0.13% to +0.52%) and it beat only 86% of random timing (95% required). The effect looks smaller since it became famous.",
     "reports": ["docs/turn_of_month_report.md"]
+  },
+  {
+    "id": "E20", "date": "2026-11-19", "kind": "measurement",
+    "title": "News effect: how much NAS100, gold and BTC move in the 30 minutes after each US high-impact release",
+    "question": "How many times bigger is the 30-minute range after CPI, NFP, FOMC, GDP and PCE than at the same time on nearby days without news, per market?",
+    "rules": "docs/news_effect_preregistration.md", "rules_commit": "60c011d",
+    "data": "HistData NSXUSD and XAUUSD, Binance BTCUSDT M1, events 2019-2024 (2025+ locked)",
+    "evaluations": 0, "outcome": "measured",
+    "result": "News makes the first 30 minutes much bigger than normal: NAS100 CPI 3.3x, NFP 3.5x, FOMC 2.9x; gold FOMC 6.1x, CPI 2.8x, NFP 2.9x; BTC 1.9-2.4x for CPI/NFP/FOMC; GDP and PCE 1.2-1.8x. Size only: the measure says nothing about direction. Shown on the dashboard News card and in the Telegram heads-up 30 minutes before each release; the +-30-minute blackout is unchanged.",
+    "reports": ["docs/news_effect_report.md"]
+  },
+  {
+    "id": "E21", "date": "2026-11-19", "kind": "strategy test",
+    "title": "Turn of the month: paper forward test on MT5 USTEC (collecting)",
+    "question": "Does the E19 turn-of-month rule, unchanged, make money after costs on new MT5 USTEC prices it has never seen?",
+    "rules": "docs/turn_of_month_forward_preregistration.md", "rules_commit": "60c011d",
+    "data": "MT5 USTEC M1 bars stored by the engine, month turns with entry on or after 2025-12-01",
+    "evaluations": 0, "outcome": "incomplete",
+    "result": "Running automatically (app/core/tom_forward.py, dashboard Results card, Telegram). No verdict before 36 trades (about 3 years). First 2 trades: +2.33% and -3.46% after costs. Paper only; never ordered.",
+    "reports": []
   }
 ]

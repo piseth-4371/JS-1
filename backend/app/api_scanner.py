@@ -10,7 +10,7 @@ from fastapi import APIRouter, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core import scanner, news
+from app.core import news, scanner, tom_forward
 from app.core.cost_observations import read_observations
 from app.db import get_engine
 from app.models import ScannerSignalRow
@@ -59,7 +59,12 @@ def get_scanner(limit: int = Query(40, ge=1, le=200)) -> dict:
                    or not next(m for m in scanner.scan_markets() if m.key == signal["market"]).open_at(now)):
         snapshot.update(signal=None, note="WAIT: latest signal is stale, expired, or no longer eligible.")
     observations = read_observations()
+    try:
+        tom = tom_forward.report(now)
+    except Exception as e:                       # never break the scanner card over this
+        tom = {"error": type(e).__name__, "trades": [], "summary": None, "next": None}
     return {
+        "turn_of_month": tom,
         **snapshot,
         "qualified_strategies": [{"market": m, "strategy": n, "validation_avg_r": v}
                                  for (m, n), v in scanner.QUALIFIED.items()],

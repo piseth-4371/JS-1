@@ -31,8 +31,14 @@ class Settings(BaseSettings):
     # Telegram alerts (one-way, signals only). Off unless both are set in .env.
     telegram_bot_token: SecretStr | None = None
     telegram_chat_id: str | None = None
-    telegram_practice_alerts: bool = True    # also send setups from strategies that FAILED their backtest (labelled)
-    telegram_session_alerts: bool = True     # "London / New York window open" messages
+    # Owner 2026-11-19: "only bother me when there is something real". Practice setups and session-open messages are
+    # OFF by default; real signals, feed problems, news heads-ups, the monthly summary and the turn-of-month
+    # paper test are always sent (when Telegram is configured).
+    telegram_practice_alerts: bool = False   # also send setups from strategies that FAILED their backtest (labelled)
+    telegram_session_alerts: bool = False    # "London / New York window open" messages
+    telegram_news_alerts: bool = True        # heads-up 30 min before high-impact news, with its usual effect
+    telegram_monthly_report: bool = True     # results summary on the first scanner cycle of each month
+    telegram_tom_alerts: bool = True         # turn-of-month paper test: bought / finished / void
 
     # Only "paper" is allowed. There is no live trading in this codebase.
     trading_mode: Literal["paper"] = "paper"

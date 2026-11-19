@@ -73,5 +73,17 @@ export function resultsCard(scan, metrics) {
     paper = { closed, wins, losses: closed - wins, totalR: metrics.total_r ?? 0,
               avgR: closed ? metrics.expectancy_r ?? null : null, pnlUsd: metrics.pnl_usd ?? 0 };
   }
-  return { qualified: resultRow(tr?.shown), practice: resultRow(tr?.practice), paper, note: tr?.note ?? null };
+  return { qualified: resultRow(tr?.shown), practice: resultRow(tr?.practice), paper, note: tr?.note ?? null,
+           tom: tomRow(scan?.turn_of_month) };
+}
+
+// Turn-of-month paper forward test (backend app/core/tom_forward.py). Never a verdict before 36 trades.
+export function tomRow(t) {
+  if (!t || !t.summary) return null;
+  const done = (t.trades ?? []).filter((x) => x.counted && x.status === "done");
+  return {
+    trades: t.summary.trades, needed: t.summary.verdict_after, wins: t.summary.wins, losses: t.summary.losses,
+    totalPct: t.summary.total_net_pct, verdict: t.summary.verdict, void: t.summary.void,
+    last: done.length ? done[done.length - 1] : null, next: t.next ?? null,
+  };
 }

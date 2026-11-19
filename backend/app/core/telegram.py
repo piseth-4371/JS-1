@@ -102,6 +102,22 @@ def feed_message(market: str, state: str, detail: str, ts: int) -> str:
     return f"⚠️ {name}: {state} — {detail}.{hint}\n{_times(ts)}"
 
 
+def news_message(ev, now: int) -> str:
+    """Heads-up before a high-impact release, with its usual 30-minute effect (measured 2019-2024)."""
+    from app.core import news
+    mins = max(1, round((ev.ts - now) / 60))
+    lines = [f"📰 {ev.name} in {mins} min ({_times(ev.ts)})"]
+    eff = news.effect(ev.name)
+    for m in ("nas100", "gold", "btc"):
+        if m in eff and eff[m]["x"]:
+            lines.append(f"{MARKETS[m]}: usually {eff[m]['x']:.1f}× a normal move (≈{eff[m]['range_pct']:.2f}% in 30 min)")
+    lines.append("No new entries from 30 min before to 30 min after. Direction is never predictable.")
+    return "\n".join(lines)
+
+
+NEWS_LEAD = 30 * 60
+
+
 def sessions_open(ts: int) -> set[str]:
     """Which entry windows are open at ts (weekdays only), plus 'Asia' from 18:00 NY Sun-Thu."""
     ny = datetime.fromtimestamp(ts, NY)
@@ -129,6 +145,7 @@ class Notifier:
     def __init__(self) -> None:
         self.feed: dict[str, str] = {}
         self.sessions: set[str] | None = None     # None = first cycle: do not announce sessions already open
+        self.news_sent: set[int] = set()
 
     def messages(self, scan: dict, alerts: list[dict], now: int) -> list[str]:
         s = get_settings()
@@ -138,6 +155,12 @@ class Notifier:
             if self.sessions is not None:
                 out += [session_message(n, now) for n in ("Asia", "London", "New York") if n in current - self.sessions]
             self.sessions = current
+        if s.telegram_news_alerts:
+            from app.core import news
+            for ev in news.load_events():
+                if 0 < ev.ts - now <= NEWS_LEAD and ev.ts not in self.news_sent:
+                    out.append(news_message(ev, now))
+                    self.news_sent.add(ev.ts)
         for m in scan.get("markets", []):
             old, new = self.feed.get(m["key"]), m["state"]
             bad = ("stale", "no data")

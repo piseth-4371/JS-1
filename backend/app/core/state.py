@@ -14,6 +14,8 @@ DEFAULTS = {
     "broker_cursor_ts": "0",          # last 1-minute bar the paper broker processed (NAS100 book)
     "active_strategy_btc": "btc_weekend_trend_fvg",
     "broker_cursor_ts_btc": "0",      # same, BTC weekend book
+    "tg_monthly_sent": "",            # last month whose Telegram results summary was sent ("YYYY-MM")
+    "tg_tom_sent": "",                # turn-of-month test messages already sent ("2026-11:open,...")
 }
 
 

@@ -92,7 +92,9 @@ def overview() -> dict:
                 "calendar_covers_now": news.covered(now),
                 "calendar_until": str(news.COVERED_UNTIL),
                 "events_included": list(news.EVENTS),
-                "upcoming": [{"label": e.label, "ts": e.ts, "source": e.source} for e in news.upcoming(now, 24 * 7)],
+                "upcoming": [{"label": e.label, "name": e.name, "ts": e.ts, "source": e.source, "effect": news.effect(e.name)}
+                             for e in news.upcoming(now, 24 * 7)],
+                "effect_note": "Usual first 30 minutes after this news, 2019-2024 (docs/news_effect_report.md)",
             },
             "trading_now": next((x["key"] for x in books if x["open_now"] and x["enabled"]), None),
         }

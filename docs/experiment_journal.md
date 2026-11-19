@@ -10,9 +10,9 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 
 ## Summary
 
-- Experiments: **19** (11 strategy tests or filters, 8 measurements or checks).
+- Experiments: **21** (12 strategy tests or filters, 9 measurements or checks).
 - Strategy evaluations so far: **53**. Passed: **0**.
-- Outcomes: Failed 9, Measured (no pass/fail) 8, In progress (no verdict) 1, Inconclusive 1.
+- Outcomes: Failed 9, Measured (no pass/fail) 9, In progress (no verdict) 2, Inconclusive 1.
 - Journal check: **OK**.
 
 | id | date | experiment | kind | pre-registered | evaluations | outcome |
@@ -36,6 +36,8 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 | E17 | 2026-11-19 | Slow multi-market trend (10 markets, monthly) vs benchmarks | strategy test | yes, before results | 1 | Failed |
 | E18 | 2026-11-19 | Exness cost gate: NAS100 backtest trades re-priced with Exness spread | measurement | yes, before results | 0 | Measured (no pass/fail) |
 | E19 | 2026-11-19 | Turn of the month: hold the Nasdaq over each month end (own idea) | strategy test | yes, before results | 1 | Inconclusive |
+| E20 | 2026-11-19 | News effect: how much NAS100, gold and BTC move in the 30 minutes after each US high-impact release | measurement | yes; result not committed yet | 0 | Measured (no pass/fail) |
+| E21 | 2026-11-19 | Turn of the month: paper forward test on MT5 USTEC (collecting) | strategy test | yes, before results | 0 | In progress (no verdict) |
 
 ## Details
 
@@ -190,6 +192,22 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 - **Data:** FRED NASDAQCOM daily closes; dev 1971-1999, validation 2000-2024 (2025+ locked)
 - **Outcome:** Inconclusive. Inconclusive, the best result so far but not a pass. 1971-1999 passed every check (+0.50% per trade after costs, range +0.23% to +0.74%, beat 100% of random timing). 2000-2024 stayed positive (+0.19% per trade, stress +0.06%) but the range crossed zero (-0.13% to +0.52%) and it beat only 86% of random timing (95% required). The effect looks smaller since it became famous.
 - **Report:** `docs/turn_of_month_report.md`
+
+### E20 — News effect: how much NAS100, gold and BTC move in the 30 minutes after each US high-impact release
+
+- **Question:** How many times bigger is the 30-minute range after CPI, NFP, FOMC, GDP and PCE than at the same time on nearby days without news, per market?
+- **Rules:** `docs/news_effect_preregistration.md` (commit 60c011d)
+- **Data:** HistData NSXUSD and XAUUSD, Binance BTCUSDT M1, events 2019-2024 (2025+ locked)
+- **Outcome:** Measured (no pass/fail). News makes the first 30 minutes much bigger than normal: NAS100 CPI 3.3x, NFP 3.5x, FOMC 2.9x; gold FOMC 6.1x, CPI 2.8x, NFP 2.9x; BTC 1.9-2.4x for CPI/NFP/FOMC; GDP and PCE 1.2-1.8x. Size only: the measure says nothing about direction. Shown on the dashboard News card and in the Telegram heads-up 30 minutes before each release; the +-30-minute blackout is unchanged.
+- **Report:** `docs/news_effect_report.md`
+
+### E21 — Turn of the month: paper forward test on MT5 USTEC (collecting)
+
+- **Question:** Does the E19 turn-of-month rule, unchanged, make money after costs on new MT5 USTEC prices it has never seen?
+- **Rules:** `docs/turn_of_month_forward_preregistration.md` (commit 60c011d)
+- **Data:** MT5 USTEC M1 bars stored by the engine, month turns with entry on or after 2025-12-01
+- **Outcome:** In progress (no verdict). Running automatically (app/core/tom_forward.py, dashboard Results card, Telegram). No verdict before 36 trades (about 3 years). First 2 trades: +2.33% and -3.46% after costs. Paper only; never ordered.
+- **Report:** 
 
 ## Adding a new experiment
 

@@ -57,6 +57,22 @@ def _pull_gold(days: float = 3 / 24) -> None:
     save_bars(bars, update_existing=True)
 
 
+def _send_reports(now: int) -> int:
+    """Monthly results + turn-of-month paper test messages (each remembered in the DB, sent once)."""
+    from sqlalchemy.orm import Session
+
+    from app.core import reports, telegram
+    from app.db import get_engine
+    s = get_settings()
+    try:
+        with Session(get_engine()) as db, db.begin():
+            texts = reports.messages(db, now, monthly=s.telegram_monthly_report, tom_alerts=s.telegram_tom_alerts)
+    except Exception:
+        log.exception("telegram reports failed")
+        return 0
+    return sum(telegram.send(t) for t in texts)
+
+
 async def scanner_forever() -> None:
     """Every 20 s: refresh gold bars, then run the 3-market signals-only scanner."""
     from sqlalchemy.orm import Session
@@ -86,6 +102,7 @@ async def scanner_forever() -> None:
             log.info("scanner: %s", res["note"])
             if telegram.enabled():
                 await asyncio.to_thread(notifier.notify, res, alerts, int(res["scanned_ts"]))
+                await asyncio.to_thread(_send_reports, int(res["scanned_ts"]))
         except Exception:
             log.exception("scanner cycle failed")
         await asyncio.sleep(INTERVAL)

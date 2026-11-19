@@ -1,0 +1,153 @@
+{
+  "made": "2026-11-19",
+  "period": "2019-2024",
+  "window_minutes": 30,
+  "rules": "docs/news_effect_preregistration.md",
+  "effects": {
+    "CPI": {
+      "nas100": {
+        "n": 69,
+        "skipped": 3,
+        "news_range_pct": 0.654,
+        "normal_range_pct": 0.196,
+        "effect_x": 3.33,
+        "news_move_pct": 0.325,
+        "share_over_2x": 0.696
+      },
+      "gold": {
+        "n": 68,
+        "skipped": 4,
+        "news_range_pct": 0.747,
+        "normal_range_pct": 0.264,
+        "effect_x": 2.83,
+        "news_move_pct": 0.341,
+        "share_over_2x": 0.647
+      },
+      "btc": {
+        "n": 72,
+        "skipped": 0,
+        "news_range_pct": 1.115,
+        "normal_range_pct": 0.544,
+        "effect_x": 2.05,
+        "news_move_pct": 0.496,
+        "share_over_2x": 0.514
+      }
+    },
+    "NFP": {
+      "nas100": {
+        "n": 69,
+        "skipped": 3,
+        "news_range_pct": 0.694,
+        "normal_range_pct": 0.2,
+        "effect_x": 3.48,
+        "news_move_pct": 0.336,
+        "share_over_2x": 0.87
+      },
+      "gold": {
+        "n": 67,
+        "skipped": 5,
+        "news_range_pct": 0.787,
+        "normal_range_pct": 0.272,
+        "effect_x": 2.9,
+        "news_move_pct": 0.312,
+        "share_over_2x": 0.821
+      },
+      "btc": {
+        "n": 72,
+        "skipped": 0,
+        "news_range_pct": 1.067,
+        "normal_range_pct": 0.555,
+        "effect_x": 1.92,
+        "news_move_pct": 0.493,
+        "share_over_2x": 0.361
+      }
+    },
+    "FOMC": {
+      "nas100": {
+        "n": 44,
+        "skipped": 5,
+        "news_range_pct": 0.765,
+        "normal_range_pct": 0.26,
+        "effect_x": 2.94,
+        "news_move_pct": 0.292,
+        "share_over_2x": 0.705
+      },
+      "gold": {
+        "n": 44,
+        "skipped": 5,
+        "news_range_pct": 0.711,
+        "normal_range_pct": 0.117,
+        "effect_x": 6.09,
+        "news_move_pct": 0.2,
+        "share_over_2x": 0.932
+      },
+      "btc": {
+        "n": 49,
+        "skipped": 0,
+        "news_range_pct": 1.274,
+        "normal_range_pct": 0.533,
+        "effect_x": 2.39,
+        "news_move_pct": 0.495,
+        "share_over_2x": 0.612
+      }
+    },
+    "GDP": {
+      "nas100": {
+        "n": 68,
+        "skipped": 3,
+        "news_range_pct": 0.327,
+        "normal_range_pct": 0.206,
+        "effect_x": 1.58,
+        "news_move_pct": 0.145,
+        "share_over_2x": 0.279
+      },
+      "gold": {
+        "n": 69,
+        "skipped": 2,
+        "news_range_pct": 0.424,
+        "normal_range_pct": 0.28,
+        "effect_x": 1.52,
+        "news_move_pct": 0.17,
+        "share_over_2x": 0.29
+      },
+      "btc": {
+        "n": 71,
+        "skipped": 0,
+        "news_range_pct": 0.649,
+        "normal_range_pct": 0.547,
+        "effect_x": 1.19,
+        "news_move_pct": 0.213,
+        "share_over_2x": 0.169
+      }
+    },
+    "PCE": {
+      "nas100": {
+        "n": 67,
+        "skipped": 4,
+        "news_range_pct": 0.393,
+        "normal_range_pct": 0.223,
+        "effect_x": 1.77,
+        "news_move_pct": 0.136,
+        "share_over_2x": 0.343
+      },
+      "gold": {
+        "n": 67,
+        "skipped": 4,
+        "news_range_pct": 0.377,
+        "normal_range_pct": 0.28,
+        "effect_x": 1.35,
+        "news_move_pct": 0.126,
+        "share_over_2x": 0.134
+      },
+      "btc": {
+        "n": 71,
+        "skipped": 0,
+        "news_range_pct": 0.726,
+        "normal_range_pct": 0.582,
+        "effect_x": 1.25,
+        "news_move_pct": 0.285,
+        "share_over_2x": 0.225
+      }
+    }
+  }
+}

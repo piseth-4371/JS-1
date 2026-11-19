@@ -69,6 +69,26 @@ function SignalCard({ c }) {
   );
 }
 
+const EFFECT_MARKETS = [["nas100", "NAS100"], ["gold", "Gold"], ["btc", "BTC"]];
+
+function EffectLine({ effect }) {
+  const parts = EFFECT_MARKETS.filter(([k]) => effect?.[k]?.x);
+  if (!parts.length) return null;
+  return (
+    <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
+      {parts.map(([k, label]) => {
+        const x = effect[k].x;
+        const tone = x >= 2.5 ? "text-red-300" : x >= 1.5 ? "text-amber-300" : "text-slate-400";
+        return (
+          <span key={k} className={tone} title={`Usual 30-minute range ≈ ${effect[k].range_pct.toFixed(2)}% of price`}>
+            {label} {x.toFixed(1)}× normal
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function NewsCard({ n }) {
   return (
     <div className="card">
@@ -89,9 +109,18 @@ function NewsCard({ n }) {
             <div className="text-sm text-slate-500">None listed.</div>
           ) : (
             n.upcoming.map((e) => (
-              <Row key={`${e.label}-${e.ts}`} k={e.label} v={`${nyTime(e.ts)} NY`} />
+              <div key={`${e.label}-${e.ts}`} className="border-b border-slate-800 py-1.5">
+                <div className="flex justify-between gap-3 text-sm">
+                  <span className="font-medium text-slate-200">{e.name ?? e.label}</span>
+                  <span className="font-mono text-right">{nyTime(e.ts)} NY</span>
+                </div>
+                <EffectLine effect={e.effect} />
+              </div>
             ))
           )}
+          <p className="mt-2 text-xs text-slate-500">
+            × normal = how much bigger the first 30 minutes usually move after this news (2019-2024). It never tells the direction.
+          </p>
           {n.until && <div className="mt-2 text-xs text-slate-500">Calendar loaded up to {n.until}.</div>}
         </>
       )}
@@ -175,6 +204,35 @@ function ResultLine({ title, r, tone }) {
   );
 }
 
+const pctTxt = (x) => (x == null ? "—" : `${x > 0 ? "+" : ""}${x.toFixed(2)}%`);
+
+function TomLine({ t }) {
+  return (
+    <div className="rounded-md bg-violet-500/10 p-2 text-violet-100 ring-1 ring-violet-500/30">
+      <div className="text-xs font-semibold">Turn-of-month paper test (NAS100) — collecting, no verdict</div>
+      {t ? (
+        <>
+          <div className="mt-1 grid grid-cols-2 gap-x-3 text-sm sm:grid-cols-5">
+            <span>Trades <b className="font-mono">{t.trades}</b> / {t.needed}</span>
+            <span>Wins <b className="font-mono text-emerald-300">{t.wins}</b></span>
+            <span>Losses <b className="font-mono text-red-300">{t.losses}</b></span>
+            <span>Total <b className="font-mono">{pctTxt(t.totalPct)}</b></span>
+            <span>Void <b className="font-mono">{t.void}</b></span>
+          </div>
+          <div className="mt-1 text-xs text-violet-200/80">
+            {t.last && <>Last: {t.last.entry_date} → {t.last.exit_date} {pctTxt(t.last.net_pct)} after costs. </>}
+            {t.next && <>Next: {t.next.status === "open" ? "holding since" : "buy at the close on"} {t.next.entry_date}, sell {t.next.exit_date}.</>}
+          </div>
+        </>
+      ) : <div className="mt-1 text-sm text-slate-400">No data.</div>}
+      <div className="mt-1 text-xs text-slate-400">
+        Buy at the close of the 2nd-to-last trading day, sell at the close of the 3rd. Paper only, never ordered.
+        Its history test was inconclusive, so this is not a signal to trade.
+      </div>
+    </div>
+  );
+}
+
 function ResultsCard({ r }) {
   return (
     <div className="card">
@@ -196,6 +254,7 @@ function ResultsCard({ r }) {
             </div>
           ) : <div className="mt-1 text-sm text-slate-400">No data.</div>}
         </div>
+        <TomLine t={r.tom} />
       </div>
       <p className="mt-2 text-xs text-slate-500">
         R = result in units of the risk taken (+1R won what was risked, −1R lost it). Simulated with assumed costs; history, not a promise.

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { autoMarket, newsCard, resultRow, resultsCard, signalCard } from "./simpleView.js";
+import { autoMarket, newsCard, resultRow, resultsCard, signalCard, tomRow } from "./simpleView.js";
 
 const NOW = 1_800_000_000;
 const setup = (over = {}) => ({ market: "nas100", strategy: "silver_bullet", side: "LONG", entry: 100, stop: 95,
@@ -60,6 +60,20 @@ test("results keep qualified and practice apart and count losses", () => {
   assert.deepEqual([r.practice.wins, r.practice.losses, r.practice.totalR], [3, 7, -2.5]);
   assert.deepEqual([r.paper.wins, r.paper.losses], [2, 2]);
   assert.equal(resultRow(null), null);
+});
+
+test("turn-of-month row shows the last finished trade and the next one", () => {
+  const t = { summary: { trades: 2, verdict_after: 36, wins: 1, losses: 1, total_net_pct: -1.13, verdict: "collecting — no verdict", void: 0 },
+              trades: [{ counted: true, status: "done", net_pct: 2.3, entry_date: "2026-09-29" },
+                       { counted: true, status: "done", net_pct: -3.4, entry_date: "2026-10-29" },
+                       { counted: true, status: "scheduled", entry_date: "2026-11-27" }],
+              next: { status: "scheduled", entry_date: "2026-11-27", exit_date: "2026-12-03" } };
+  const r = tomRow(t);
+  assert.equal(r.last.net_pct, -3.4);
+  assert.equal(r.next.entry_date, "2026-11-27");
+  assert.equal(r.verdict, "collecting — no verdict");
+  assert.equal(tomRow(null), null);
+  assert.equal(resultsCard({ turn_of_month: t }, null).tom.trades, 2);
 });
 
 test("the chart market is picked automatically", () => {

@@ -129,3 +129,21 @@ def test_notify_sends_nothing_when_disabled(monkeypatch):
     get_settings.cache_clear()
     assert telegram.Notifier().notify({"markets": []}, [{"type": "setup", "setup": _setup(True)}], 0) == 0
     get_settings.cache_clear()
+
+
+def test_practice_and_session_alerts_are_off_by_default(monkeypatch):
+    from app.config import Settings
+    for k in ("TELEGRAM_PRACTICE_ALERTS", "TELEGRAM_SESSION_ALERTS", "TELEGRAM_NEWS_ALERTS"):
+        monkeypatch.delenv(k, raising=False)
+    s = Settings(_env_file=None)
+    assert (s.telegram_practice_alerts, s.telegram_session_alerts, s.telegram_news_alerts) == (False, False, True)
+
+
+def test_news_heads_up_sent_once_30_minutes_before(tg):
+    from app.core import news
+    ev = next(e for e in news.load_events() if e.name == "CPI" and e.ts > 1_700_000_000)
+    n = telegram.Notifier()
+    assert [m for m in n.messages({"markets": []}, [], ev.ts - 3600) if m.startswith("📰")] == []
+    first = [m for m in n.messages({"markets": []}, [], ev.ts - 29 * 60) if m.startswith("📰")]
+    assert len(first) == 1 and "CPI in 29 min" in first[0] and "NAS100: usually" in first[0]
+    assert [m for m in n.messages({"markets": []}, [], ev.ts - 28 * 60) if m.startswith("📰")] == []

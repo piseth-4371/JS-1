@@ -22,6 +22,7 @@ Rules (the same in the backtester and the live engine):
 from __future__ import annotations
 
 import csv
+import json
 from dataclasses import dataclass
 from datetime import date, datetime
 from functools import lru_cache
@@ -32,6 +33,10 @@ import numpy as np
 
 NY = ZoneInfo("America/New_York")
 CALENDAR = Path(__file__).resolve().parent.parent / "calendar" / "us_high_impact_events.csv"
+# Usual 30-minute effect of each news type on NAS100 / gold / BTC, measured 2019-2024 (scripts/news_effect.py,
+# docs/news_effect_report.md). Information only: the blackout rule does not use it.
+EFFECTS = CALENDAR.parent / "news_effect.json"
+EFFECT_MARKETS = ("nas100", "gold", "btc")
 COVERED_FROM, COVERED_UNTIL = date(2019, 1, 1), date(2027, 1, 1)   # until = exclusive
 WINDOW = 30 * 60                                                    # seconds before and after
 EVENTS = ("CPI", "NFP", "FOMC", "GDP", "PCE")
@@ -58,6 +63,22 @@ def load_events() -> tuple[Event, ...]:
             ts = int(datetime(d.year, d.month, d.day, hh, mm, tzinfo=NY).timestamp())
             out.append(Event(ts, r["event"], r["source"]))
     return tuple(sorted(out, key=lambda e: e.ts))
+
+
+@lru_cache
+def load_effects() -> dict:
+    """{news name: {market: summary}}; empty if the measurement file is missing."""
+    try:
+        return json.loads(EFFECTS.read_text(encoding="utf-8")).get("effects", {})
+    except (OSError, ValueError):
+        return {}
+
+
+def effect(name: str) -> dict:
+    """Short per-market effect for one news type: {market: {"x": times normal, "range_pct": usual 30-min range}}."""
+    e = load_effects().get(name, {})
+    return {m: {"x": v.get("effect_x"), "range_pct": v.get("news_range_pct")}
+            for m in EFFECT_MARKETS if (v := e.get(m)) and v.get("n")}
 
 
 @lru_cache
