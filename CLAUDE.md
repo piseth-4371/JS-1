@@ -19,6 +19,7 @@ Success = rules followed, zero risk violations, reproducible backtest, working k
 - Backtest history: HistData.com M1 (NSXUSD for NAS100, XAUUSD for gold) is the default `--data` source; Binance for BTC.
 - New ideas = research variants with a pre-registration doc written BEFORE the test. Core rules below stay as they are.
 - Every new pre-registration starts from `docs/preregistration_template.md` (since 2026-11-19). It includes a required year-by-year check (`app/backtest/yearly.py`): years with >= 10 trades count; in each period most counting years must be positive, the total without the best year must stay > 0, and at least 2 years must count. Failing it alone = inconclusive, never a pass. Applies to tests registered from now on; earlier verdicts are not re-judged.
+- The template also requires a nearby-settings check (`app/backtest/nearby.py`): each free setting gets one smaller and one larger neighbour, fixed in advance and run one at a time. In each period at least 2/3 of neighbours must average above 0, and the chosen setting may be at most 2x the median neighbour (no spike). A neighbour can never replace the chosen setting. Failing it alone = inconclusive. Applies to tests registered from now on.
 
 ## 3a. Original strategy — "NY Trend-FVG v1" (tested 2026-11-14: fails, kept for reference)
 Times America/New_York. Closed bars only.
