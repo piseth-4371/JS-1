@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getJSON } from "./api.js";
-import Chart from "./components/Chart.jsx";
 import Header from "./components/Header.jsx";
-import Journal from "./components/Journal.jsx";
-import Overview from "./components/Overview.jsx";
-import ScannerPanel from "./components/ScannerPanel.jsx";
-import SignalPanel from "./components/SignalPanel.jsx";
-import SessionPanel from "./components/SessionPanel.jsx";
 import SimpleView from "./components/SimpleView.jsx";
 import { autoMarket, signalCard } from "./simpleView.js";
-import WhyWaitPanel from "./components/WhyWaitPanel.jsx";
 
 const POLL_MS = 5000; // closed-bar analysis and dashboard panels
 const PREVIEW_POLL_MS = 2000; // display-only quote preview
@@ -25,27 +18,14 @@ export default function App() {
   const [market, setMarket] = useState(null);
   const [preview, setPreview] = useState(null);
   const [signals, setSignals] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [positions, setPositions] = useState([]);
-  const [events, setEvents] = useState([]);
   const [metrics, setMetrics] = useState(null);
   const [scan, setScan] = useState(null);
   const [error, setError] = useState(null);
   const [backendDown, setBackendDown] = useState(false);
   const [marketError, setMarketError] = useState(null);
   const [previewError, setPreviewError] = useState(null);
-  const [book, setBook] = useState(null); // null = follow the book that is trading now
-  const [tab, setTab] = useState(() => {
-    try { return localStorage.getItem("dashboardTab") === "advanced" ? "advanced" : "simple"; } catch { return "simple"; }
-  });
-  const chooseTab = (key) => {
-    setTab(key);
-    try { localStorage.setItem("dashboardTab", key); } catch { /* storage blocked: keep the choice for this visit only */ }
-  };
-  // Simple tab: no market picker - the chart follows the signal (or practice setup, or open market) automatically.
-  const view = tab === "simple"
-    ? autoMarket(signalCard({ scan: backendDown ? null : scan, ov: backendDown ? null : ov, signals, now: Date.now() / 1000 }), scan, ov)
-    : book ?? ov?.trading_now ?? "nas100";
+  // No market picker: the chart follows the signal (or practice setup, or open market) automatically.
+  const view = autoMarket(signalCard({ scan: backendDown ? null : scan, ov: backendDown ? null : ov, signals, now: Date.now() / 1000 }), scan, ov);
   const viewRef = useRef(view);
   viewRef.current = view;
   const analysisSequence = useRef(0);
@@ -58,21 +38,15 @@ export default function App() {
     if (panelsRequest.current) return;
     panelsRequest.current = true;
     try {
-      const [o, s, ord, p, e, mt, sc] = await Promise.allSettled([
+      const [o, s, mt, sc] = await Promise.allSettled([
         getJSON("/api/overview"),
         getJSON("/api/signals?limit=100"),
-        getJSON("/api/orders?limit=100"),
-        getJSON("/api/positions?limit=200"),
-        getJSON("/api/events?limit=200"),
         getJSON("/api/journal/metrics"),
         getJSON("/api/scanner"),
       ]);
       if (o.status === "fulfilled") { setOv(o.value); setBackendDown(false); }
       else setBackendDown(true);
       if (s.status === "fulfilled") setSignals(s.value);
-      if (ord.status === "fulfilled") setOrders(ord.value);
-      if (p.status === "fulfilled") setPositions(p.value);
-      if (e.status === "fulfilled") setEvents(e.value);
       if (mt.status === "fulfilled") setMetrics(mt.value);
       if (sc.status === "fulfilled") setScan(sc.value);
     } finally {
@@ -149,14 +123,11 @@ export default function App() {
   }, [view, refreshMarket, refreshPreview]);
 
   const bookInfo = ov?.markets?.find((m) => m.key === view);
-  const strategy = bookInfo?.active_strategy ?? ov?.active_strategy;
-  const latest = signals.find((s) => s.strategy === strategy);
 
   return (
     <div className="min-h-screen">
       <Header ov={ov} market={market} preview={preview} marketError={marketError} previewError={previewError}
-        refresh={refresh} setError={setError}
-        view={view} book={book} setBook={setBook} bookInfo={bookInfo} simple={tab === "simple"} />
+        refresh={refresh} setError={setError} view={view} bookInfo={bookInfo} />
       <main className="mx-auto flex max-w-[1600px] flex-col gap-4 p-4">
         {backendDown && (
           <div className="rounded-lg bg-red-600/20 p-3 text-red-200 ring-1 ring-red-500/40">
@@ -177,33 +148,11 @@ export default function App() {
             KILL SWITCH IS ON: all trading is blocked. Orders were cancelled and positions closed.
           </div>
         )}
-        <div className="flex gap-1 self-start rounded-lg bg-slate-800/60 p-1 ring-1 ring-slate-700" role="tablist">
-          {[["simple", "Simple"], ["advanced", "Advanced"]].map(([key, label]) => (
-            <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => chooseTab(key)}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium ${tab === key ? "bg-slate-200 text-slate-900" : "text-slate-300 hover:text-white"}`}>
-              {label}
-            </button>
-          ))}
-        </div>
-        {tab === "simple" ? (
-          <SimpleView scan={scan} ov={ov} signals={signals} metrics={metrics} backendDown={backendDown}
-            market={market?.view === view ? market : null} preview={preview} previewError={previewError}
-            marketError={marketError} view={view} />
-        ) : (
-          <>
-            <SessionPanel scan={scan} backendDown={backendDown} view={view} />
-            <WhyWaitPanel scan={scan} ov={ov} signals={signals} backendDown={backendDown} />
-            <ScannerPanel scan={scan} />
-            <Overview ov={ov} />
-            <div className="grid gap-4 lg:grid-cols-3">
-              <div className="lg:col-span-2"><Chart market={market} preview={preview} previewError={previewError} marketError={marketError} view={view} /></div>
-              <SignalPanel signal={latest} market={market?.view === view ? market : null} ov={ov} strategy={strategy} />
-            </div>
-            <Journal positions={positions} orders={orders} signals={signals} events={events} metrics={metrics} />
-          </>
-        )}
+        <SimpleView scan={scan} ov={ov} signals={signals} metrics={metrics} backendDown={backendDown}
+          market={market?.view === view ? market : null} preview={preview} previewError={previewError}
+          marketError={marketError} view={view} />
         <footer className="pb-4 text-center text-xs text-slate-500">
-          Paper trading only · simulated orders and fills · prices from {bookInfo?.source ?? ov?.data_source ?? "-"} · NAS100 trades weekdays, BTC weekends · times in New York time (chart clock also shows your local time)
+          Paper trading only · simulated signals and fills · NAS100, BTC and gold checked automatically · times in New York time (chart clock also shows your local time)
         </footer>
       </main>
     </div>

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { nyTime, postJSON } from "../api.js";
-import { STRATEGIES, strategyLabel } from "../strategies.js";
 
 // Small status item for the second header row: coloured dot + text, tooltip explains it.
 function Status({ tone = "muted", title, children }) {
@@ -16,7 +15,7 @@ function Status({ tone = "muted", title, children }) {
 
 const MARKET_NAME = { nas100: "NAS100", btc: "BTC", gold: "Gold" };
 
-export default function Header({ ov, market, preview, marketError, previewError, refresh, setError, view, book, setBook, bookInfo, simple = false }) {
+export default function Header({ ov, market, preview, marketError, previewError, refresh, setError, view, bookInfo }) {
   const [busy, setBusy] = useState(false);
 
   const act = async (fn) => {
@@ -47,7 +46,7 @@ export default function Header({ ov, market, preview, marketError, previewError,
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
-      {/* Row 1: identity, which market, and the controls */}
+      {/* Row 1: identity, what is watched, and the emergency stop */}
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-2 px-4 pt-3">
         <h1 className="text-lg font-semibold tracking-tight">LITTLE</h1>
         <span className="rounded-md bg-emerald-600/20 px-2 py-0.5 text-xs font-bold text-emerald-300 ring-1 ring-emerald-500/40"
@@ -55,52 +54,11 @@ export default function Header({ ov, market, preview, marketError, previewError,
           PAPER ONLY · live off
         </span>
 
-        {simple ? (
-          <span className="text-xs text-slate-400" title="The scanner checks NAS100, BTC and gold with every strategy by itself. Nothing to choose.">
-            Auto: watching NAS100, BTC and gold · chart: <b className="text-slate-200">{MARKET_NAME[view] ?? view}</b>
-          </span>
-        ) : (
-        <div className="flex overflow-hidden rounded-md ring-1 ring-slate-700" role="group" aria-label="Which market to show">
-          {(ov?.markets ?? [{ key: "nas100" }, { key: "btc" }]).map((m) => (
-            <button
-              key={m.key}
-              className={`px-3 py-1 text-xs font-medium ${view === m.key ? "bg-sky-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}
-              onClick={() => setBook(book === m.key ? null : m.key)}
-              title={m.open_now ? "Trading window open now" : "Outside its trading window"}
-              aria-pressed={view === m.key}
-            >
-              {m.key === "btc" ? "BTC" : "NAS100"}
-              {m.open_now && <span className="ml-1 text-emerald-300">●</span>}
-            </button>
-          ))}
-        </div>
-        )}
+        <span className="text-xs text-slate-400" title="The scanner checks NAS100, BTC and gold with every strategy by itself. Nothing to choose.">
+          Auto: watching NAS100, BTC and gold · chart: <b className="text-slate-200">{MARKET_NAME[view] ?? view}</b>
+        </span>
 
-        <div className="ml-auto flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          {!simple && (<>
-          <select
-            aria-label="Strategy for this market"
-            className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm sm:flex-none"
-            value={bookInfo?.active_strategy ?? ov?.active_strategy ?? ""}
-            disabled={busy || !ov}
-            onChange={(e) => act(() => postJSON("/api/controls/strategy", { name: e.target.value }))}
-          >
-            {!ov && <option value="">loading…</option>}
-            {STRATEGIES.filter((s) => s.startsWith("btc_") === (view === "btc")).map((s) => (
-              <option key={s} value={s}>{strategyLabel(s)}</option>
-            ))}
-          </select>
-
-          <button
-            className={`btn ${ov?.auto_trading ? "bg-sky-600 text-white" : "bg-slate-700 text-slate-200"}`}
-            disabled={busy || !ov || ov.kill_switch}
-            onClick={() => act(() => postJSON("/api/controls/auto-trading", { enabled: !ov.auto_trading }))}
-            title={ov?.kill_switch ? "Reset the kill switch first" : "Auto-trading can never bypass the Risk Manager"}
-          >
-            Auto: {!ov ? "…" : ov.auto_trading ? "ON" : "OFF"}
-          </button>
-          </>)}
-
+        <div className="ml-auto flex items-center gap-2">
           {ov?.kill_switch ? (
             <button className="btn bg-amber-600 text-white" disabled={busy}
               onClick={() => act(() => postJSON("/api/controls/reset-kill"))}>

@@ -35,8 +35,4 @@ export const nyTime = (ts) => (ts ? nyFmt.format(new Date(ts * 1000)) : "-");
 export const money = (x, digits = 2) =>
   x == null ? "-" : `${x < 0 ? "-" : ""}$${Math.abs(x).toFixed(digits)}`;
 
-export const pct = (x) => (x == null ? "-" : `${x >= 0 ? "+" : ""}${x.toFixed(2)}%`);
-
 export const num = (x, d = 2) => (x == null ? "-" : Number(x).toFixed(d));
-
-export const sideText = (s) => (s === 1 ? "LONG" : s === -1 ? "SHORT" : "-");
