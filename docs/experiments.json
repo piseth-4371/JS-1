@@ -168,5 +168,15 @@
     "evaluations": 1, "outcome": "fail",
     "result": "Negative observed result. Net Sharpe +0.32 in 1988-2010 (range -0.07 to +0.71) but -0.30 in 2011-2024. Before costs +0.73 and +0.13: the assumed costs and 2% financing removed the small validation edge. Beat 100% and 94% of random-direction portfolios, and lost far less than always long in its worst months. Amendment 1 (commit 669cbe5) excluded one negative WTI price before any result.",
     "reports": ["docs/multimarket_trend_report.md"]
+  },
+  {
+    "id": "E18", "date": "2026-11-19", "kind": "measurement",
+    "title": "Exness cost gate: NAS100 backtest trades re-priced with Exness spread",
+    "question": "Would the 7 NAS100 strategies still look the same if the 1.5-point backtest spread were replaced by the 2.94-point spread measured on Exness USTEC (p90 stress 3.29/3.65)?",
+    "rules": "docs/exness_cost_gate_preregistration.md", "rules_commit": "5e8744a",
+    "data": "backend/data/backtest_trades.csv (bid-only HistData backtest, 4,774 trades 2019-2024); Exness USTEC 2021-2023 spread levels",
+    "evaluations": 0, "outcome": "measured",
+    "result": "Every strategy got worse: on average 0.109R more cost per trade. All 7 had already failed their main tests, so none is eligible. The only positive split, sweep_mss_fvg 2023-24, fell from +0.150R to +0.100R (stress +0.075R) while its 2019-22 split is -0.238R. The gate is now a permanent extra rule before anything can be added to scanner.QUALIFIED.",
+    "reports": ["docs/exness_cost_gate_report.md"]
   }
 ]
