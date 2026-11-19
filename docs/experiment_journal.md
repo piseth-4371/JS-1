@@ -10,9 +10,9 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 
 ## Summary
 
-- Experiments: **18** (10 strategy tests or filters, 8 measurements or checks).
-- Strategy evaluations so far: **52**. Passed: **0**.
-- Outcomes: Failed 9, Measured (no pass/fail) 8, In progress (no verdict) 1.
+- Experiments: **19** (11 strategy tests or filters, 8 measurements or checks).
+- Strategy evaluations so far: **53**. Passed: **0**.
+- Outcomes: Failed 9, Measured (no pass/fail) 8, In progress (no verdict) 1, Inconclusive 1.
 - Journal check: **OK**.
 
 | id | date | experiment | kind | pre-registered | evaluations | outcome |
@@ -35,6 +35,7 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 | E16 | 2026-11-19 | Exness spread by year, 2019-2024 | measurement | yes, before results | 0 | Measured (no pass/fail) |
 | E17 | 2026-11-19 | Slow multi-market trend (10 markets, monthly) vs benchmarks | strategy test | yes, before results | 1 | Failed |
 | E18 | 2026-11-19 | Exness cost gate: NAS100 backtest trades re-priced with Exness spread | measurement | yes, before results | 0 | Measured (no pass/fail) |
+| E19 | 2026-11-19 | Turn of the month: hold the Nasdaq over each month end (own idea) | strategy test | yes, before results | 1 | Inconclusive |
 
 ## Details
 
@@ -181,6 +182,14 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 - **Data:** backend/data/backtest_trades.csv (bid-only HistData backtest, 4,774 trades 2019-2024); Exness USTEC 2021-2023 spread levels
 - **Outcome:** Measured (no pass/fail). Every strategy got worse: on average 0.109R more cost per trade. All 7 had already failed their main tests, so none is eligible. The only positive split, sweep_mss_fvg 2023-24, fell from +0.150R to +0.100R (stress +0.075R) while its 2019-22 split is -0.238R. The gate is now a permanent extra rule before anything can be added to scanner.QUALIFIED.
 - **Report:** `docs/exness_cost_gate_report.md`
+
+### E19 — Turn of the month: hold the Nasdaq over each month end (own idea)
+
+- **Question:** Does holding the Nasdaq Composite from the second-to-last trading day of a month to the 3rd trading day of the next earn more than random timing, after Exness-like spread and overnight financing?
+- **Rules:** `docs/turn_of_month_preregistration.md` (commit bd2e15c)
+- **Data:** FRED NASDAQCOM daily closes; dev 1971-1999, validation 2000-2024 (2025+ locked)
+- **Outcome:** Inconclusive. Inconclusive, the best result so far but not a pass. 1971-1999 passed every check (+0.50% per trade after costs, range +0.23% to +0.74%, beat 100% of random timing). 2000-2024 stayed positive (+0.19% per trade, stress +0.06%) but the range crossed zero (-0.13% to +0.52%) and it beat only 86% of random timing (95% required). The effect looks smaller since it became famous.
+- **Report:** `docs/turn_of_month_report.md`
 
 ## Adding a new experiment
 
