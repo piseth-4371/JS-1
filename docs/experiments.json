@@ -158,5 +158,15 @@
     "evaluations": 0, "outcome": "measured",
     "result": "Usable: 2021, 2022, 2023 (median 2.75-2.94 pts). Not usable: 2019 and 2020 (too few complete days), 2024 (price gap to HistData 17.29 pts). Exness cannot cover both test periods.",
     "reports": ["docs/exness_spread_years_report.md"]
+  },
+  {
+    "id": "E17", "date": "2026-11-19", "kind": "strategy test",
+    "title": "Slow multi-market trend (10 markets, monthly) vs benchmarks",
+    "question": "Does a 12-month trend rule across stocks, energy and currencies earn a positive return after costs, and beat holding the same markets or random directions?",
+    "rules": "docs/multimarket_trend_preregistration.md", "rules_commit": "3d5fd49",
+    "data": "FRED daily spot prices and index levels, 10 markets; dev 1988-2010, validation 2011-2024 (2025+ not downloaded)",
+    "evaluations": 1, "outcome": "fail",
+    "result": "Negative observed result. Net Sharpe +0.32 in 1988-2010 (range -0.07 to +0.71) but -0.30 in 2011-2024. Before costs +0.73 and +0.13: the assumed costs and 2% financing removed the small validation edge. Beat 100% and 94% of random-direction portfolios, and lost far less than always long in its worst months. Amendment 1 (commit 669cbe5) excluded one negative WTI price before any result.",
+    "reports": ["docs/multimarket_trend_report.md"]
   }
 ]
