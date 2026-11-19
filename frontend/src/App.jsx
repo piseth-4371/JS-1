@@ -7,6 +7,7 @@ import Overview from "./components/Overview.jsx";
 import ScannerPanel from "./components/ScannerPanel.jsx";
 import SignalPanel from "./components/SignalPanel.jsx";
 import SessionPanel from "./components/SessionPanel.jsx";
+import SimpleView from "./components/SimpleView.jsx";
 import WhyWaitPanel from "./components/WhyWaitPanel.jsx";
 
 const POLL_MS = 5000; // closed-bar analysis and dashboard panels
@@ -31,6 +32,13 @@ export default function App() {
   const [marketError, setMarketError] = useState(null);
   const [previewError, setPreviewError] = useState(null);
   const [book, setBook] = useState(null); // null = follow the book that is trading now
+  const [tab, setTab] = useState(() => {
+    try { return localStorage.getItem("dashboardTab") === "advanced" ? "advanced" : "simple"; } catch { return "simple"; }
+  });
+  const chooseTab = (key) => {
+    setTab(key);
+    try { localStorage.setItem("dashboardTab", key); } catch { /* storage blocked: keep the choice for this visit only */ }
+  };
   const view = book ?? ov?.trading_now ?? "nas100";
   const viewRef = useRef(view);
   viewRef.current = view;
@@ -162,15 +170,31 @@ export default function App() {
             KILL SWITCH IS ON: all trading is blocked. Orders were cancelled and positions closed.
           </div>
         )}
-        <SessionPanel scan={scan} backendDown={backendDown} view={view} />
-        <WhyWaitPanel scan={scan} ov={ov} signals={signals} backendDown={backendDown} />
-        <ScannerPanel scan={scan} />
-        <Overview ov={ov} />
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2"><Chart market={market} preview={preview} previewError={previewError} marketError={marketError} view={view} /></div>
-          <SignalPanel signal={latest} market={market?.view === view ? market : null} ov={ov} strategy={strategy} />
+        <div className="flex gap-1 self-start rounded-lg bg-slate-800/60 p-1 ring-1 ring-slate-700" role="tablist">
+          {[["simple", "Simple"], ["advanced", "Advanced"]].map(([key, label]) => (
+            <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => chooseTab(key)}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium ${tab === key ? "bg-slate-200 text-slate-900" : "text-slate-300 hover:text-white"}`}>
+              {label}
+            </button>
+          ))}
         </div>
-        <Journal positions={positions} orders={orders} signals={signals} events={events} metrics={metrics} />
+        {tab === "simple" ? (
+          <SimpleView scan={scan} ov={ov} signals={signals} metrics={metrics} backendDown={backendDown}
+            market={market?.view === view ? market : null} preview={preview} previewError={previewError}
+            marketError={marketError} view={view} />
+        ) : (
+          <>
+            <SessionPanel scan={scan} backendDown={backendDown} view={view} />
+            <WhyWaitPanel scan={scan} ov={ov} signals={signals} backendDown={backendDown} />
+            <ScannerPanel scan={scan} />
+            <Overview ov={ov} />
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div className="lg:col-span-2"><Chart market={market} preview={preview} previewError={previewError} marketError={marketError} view={view} /></div>
+              <SignalPanel signal={latest} market={market?.view === view ? market : null} ov={ov} strategy={strategy} />
+            </div>
+            <Journal positions={positions} orders={orders} signals={signals} events={events} metrics={metrics} />
+          </>
+        )}
         <footer className="pb-4 text-center text-xs text-slate-500">
           Paper trading only · simulated orders and fills · prices from {bookInfo?.source ?? ov?.data_source ?? "-"} · NAS100 trades weekdays, BTC weekends · times in New York time (chart clock also shows your local time)
         </footer>
