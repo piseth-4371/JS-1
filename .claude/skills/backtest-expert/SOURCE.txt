@@ -1,0 +1,2 @@
+Source: https://github.com/tradermonty/claude-trading-skills (skills/backtest-expert), MIT License, copied 2026-11-19.
+Unchanged copy. In this project, CLAUDE.md and the pre-registration rules take precedence over this skill.
