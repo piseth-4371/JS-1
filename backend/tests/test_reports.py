@@ -30,10 +30,38 @@ def test_monthly_message_counts_paper_trades(temp_db):
                           exit_price=2, exit_reason="target", pnl_usd=5.0, r=2.0, risk_pts=1))
         txt = reports.monthly_message(s, "2026-11", {"trades": [DONE], "summary": tom_forward.summary([])})
     assert "November 2026" in txt
-    assert "Paper account trades: 1 done · 1 won · 0 lost · total +2.00R · +5.00 virtual $" in txt
+    assert "Paper account trades: 1 done · 1 won · 0 lost · total +2.00R · worst drop 0.00R · +5.00 virtual $" in txt
     assert "Real signals (passed strategies): none" in txt
     assert "+1.94% after costs" in txt
     assert "win rate" not in txt.lower() and "chance of winning" in txt   # only the disclaimer, no win-chance figure
+
+
+def test_drawdown_math():
+    d = reports.drawdown(1000, [10, -30, 5, -20, 50])       # 1010 high, then 965 low -> 45 down, then 1015
+    assert d["max"] == 45 and round(d["max_pct"], 3) == round(45 / 1010 * 100, 3)
+    assert d["now"] == 0 and d["now_pct"] == 0
+    assert reports.drawdown(0.0, [1, 1])["max"] == 0                            # never fell
+    c = reports.drawdown(100, [10, -10], compound=True)                         # 110 -> 99
+    assert round(c["max_pct"], 6) == 10 and round(c["now_pct"], 6) == 10
+    assert reports._neg(0.0) == "0.00" and reports._neg(1.234) == "-1.23"
+
+
+def test_monthly_message_shows_drawdowns(temp_db):
+    def pos(i, day, pnl, r):
+        return PositionRow(order_id=i, strategy="orb", side=1, kind="market", qty=0.1, entry=1, stop=0, target=2,
+                           opened_ts=ts(2026, 11, day, 10), status="closed", closed_ts=ts(2026, 11, day, 11),
+                           exit_price=2, exit_reason="x", pnl_usd=pnl, r=r, risk_pts=1)
+    with Session(get_engine()) as s, s.begin():
+        s.add_all([pos(1, 3, 20.0, 2.0), pos(2, 4, -10.0, -1.0), pos(3, 5, -5.0, -0.5), pos(4, 6, 8.0, 0.8)])
+        s.flush()
+        tom = {"trades": [DONE, {**DONE, "month": "2026-09", "exit_date": "2026-10-05", "net_pct": 2.33}],
+               "summary": tom_forward.summary([])}
+        txt = reports.monthly_message(s, "2026-11", tom)
+    # 1000 -> 1020 high -> 1005 low: 15 $ = 1.5% (default $1,000 paper balance); now 7 $ below the high
+    assert "Paper account trades: 4 done · 2 won · 2 lost · total +1.30R · worst drop -1.50R" in txt
+    assert "Paper account drawdown: this month -15.00 virtual $ (-1.5%) · biggest ever -15.00 (-1.5%) · now 0.7% below its high" in txt
+    assert "Turn-of-month drawdown: biggest 0.00% · now 0.00% below its high" in txt      # two gains in a row
+    assert "Drawdown = the biggest fall from a previous high." in txt
 
 
 def test_monthly_sent_once_and_not_on_first_run(temp_db, monkeypatch):
