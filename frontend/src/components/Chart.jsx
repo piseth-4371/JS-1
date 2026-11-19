@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createChart, LineStyle } from "lightweight-charts";
+import { formatCountdown, liveConnects, mergeLiveCandle, secondsToClose, TF_LABEL } from "../chartTime.js";
 
 // Show chart times in New York time (the strategy's clock).
 const nyTick = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -17,13 +18,15 @@ const MAX_PREVIEW_AGE_SECONDS = 15;
 
 const LEVEL_COLORS = { PDH: "#f87171", PDL: "#34d399", ONH: "#fb923c", ONL: "#2dd4bf" };
 
-export default function Chart({ market, preview, previewError, marketError, view }) {
+export default function Chart({ market, preview, previewError, marketError, view, tf = 5 }) {
   const box = useRef(null);
   const chart = useRef(null);
   const series = useRef({});
   const historyKey = useRef(null);
   const lastClosedTime = useRef(null);
   const lastPreviewKey = useRef(null);
+  const lastHistory = useRef(null);      // newest candle from history (base for the live candle)
+  const lastPrice = useRef(null);        // { price, up } for the countdown label
   const [nowMs, setNowMs] = useState(Date.now());
 
   useEffect(() => {
@@ -43,12 +46,15 @@ export default function Chart({ market, preview, previewError, marketError, view
       },
     });
     series.current = {
-      candles: c.addCandlestickSeries({ upColor: "#10b981", downColor: "#ef4444", borderVisible: false, wickUpColor: "#10b981", wickDownColor: "#ef4444" }),
+      // The countdown price line below replaces the series' own last-price label (like TradingView).
+      candles: c.addCandlestickSeries({ upColor: "#10b981", downColor: "#ef4444", borderVisible: false, wickUpColor: "#10b981", wickDownColor: "#ef4444",
+        lastValueVisible: false, priceLineVisible: false }),
       ema20: c.addLineSeries({ color: "#38bdf8", lineWidth: 1, title: "EMA20 (15m)", priceLineVisible: false }),
       ema50: c.addLineSeries({ color: "#a78bfa", lineWidth: 1, title: "EMA50 (15m)", priceLineVisible: false }),
       vwap: c.addLineSeries({ color: "#facc15", lineWidth: 1, lineStyle: LineStyle.Dotted, title: "VWAP", priceLineVisible: false }),
     };
     series.current.lines = [];
+    series.current.countdown = null;
     chart.current = c;
     return () => { c.remove(); chart.current = null; series.current = {}; };
   }, []);
@@ -64,22 +70,29 @@ export default function Chart({ market, preview, previewError, marketError, view
     s.lines.forEach((line) => s.candles.removePriceLine(line));
     s.lines = [];
     s.candles.setMarkers([]);
+    if (s.countdown) { s.candles.removePriceLine(s.countdown); s.countdown = null; }
+    // Dragging the price axis turns auto-scale off; a new market or timeframe must fit its own prices again.
+    chart.current?.priceScale("right").applyOptions({ autoScale: true });
+    chart.current?.timeScale().scrollToRealTime();
     historyKey.current = null;
     lastClosedTime.current = null;
     lastPreviewKey.current = null;
-  }, [view]);
+    lastHistory.current = null;
+    lastPrice.current = null;
+  }, [view, tf]);
 
   // Replace history only when completed candles, indicators or levels actually change.
   useEffect(() => {
-    if (!market?.available || market.view !== view || !chart.current) return;
-    const key = JSON.stringify([view, market.candles, market.ema20_15, market.ema50_15,
+    if (!market?.available || market.view !== view || (market.tf ?? 5) !== tf || !chart.current) return;
+    const key = JSON.stringify([view, tf, market.candles, market.ema20_15, market.ema50_15,
       market.vwap, market.levels, market.fvgs]);
     if (key === historyKey.current) return;
     const s = series.current;
+    const strategyTf = tf === 5;   // EMA/VWAP lines and FVG markers belong to the strategies' 5-minute bars
     s.candles.setData(market.candles);
-    s.ema20.setData(market.ema20_15);
-    s.ema50.setData(market.ema50_15);
-    s.vwap.setData(market.vwap);
+    s.ema20.setData(strategyTf ? market.ema20_15 : []);
+    s.ema50.setData(strategyTf ? market.ema50_15 : []);
+    s.vwap.setData(strategyTf ? market.vwap : []);
 
     s.lines.forEach((l) => s.candles.removePriceLine(l));
     s.lines = Object.entries(market.levels ?? {})
@@ -87,7 +100,7 @@ export default function Chart({ market, preview, previewError, marketError, view
       .map(([k, v]) => s.candles.createPriceLine({ price: v, color: LEVEL_COLORS[k], lineWidth: 1, lineStyle: LineStyle.Dashed, title: k }));
 
     s.candles.setMarkers(
-      (market.fvgs ?? []).map((g) => ({
+      (strategyTf ? market.fvgs ?? [] : []).map((g) => ({
         time: g.end_time,
         position: g.side === "bullish" ? "belowBar" : "aboveBar",
         color: g.side === "bullish" ? "#10b981" : "#ef4444",
@@ -96,9 +109,12 @@ export default function Chart({ market, preview, previewError, marketError, view
       }))
     );
     historyKey.current = key;
-    lastClosedTime.current = market.candles.at(-1)?.time ?? null;
+    const newest = market.candles.at(-1) ?? null;
+    lastHistory.current = newest;
+    lastClosedTime.current = newest?.time ?? null;
+    if (newest) lastPrice.current = { price: newest.close, up: newest.close >= newest.open };
     lastPreviewKey.current = null;
-  }, [market, view]);
+  }, [market, view, tf]);
 
   // Display-only quote: the engine still trades from completed bars, never this candle.
   const previewAge = preview?.observed_ts == null ? null : Math.max(0, Math.floor(nowMs / 1000 - preview.observed_ts));
@@ -107,19 +123,35 @@ export default function Chart({ market, preview, previewError, marketError, view
   useEffect(() => {
     if (!previewCurrent || !market?.available || market.view !== view || !series.current.candles) return;
     const candle = preview.candle;
-    if (!candle || (lastClosedTime.current != null && candle.time < lastClosedTime.current)) return;
-    const key = JSON.stringify([preview.observed_ts, candle]);
+    if (!candle) return;
+    const key = JSON.stringify([tf, preview.observed_ts, candle]);
     if (key === lastPreviewKey.current) return;
-    series.current.candles.update(candle);
     lastPreviewKey.current = key;
-  }, [market, preview, previewCurrent, view]);
+    const merged = mergeLiveCandle(lastHistory.current, candle, tf);
+    if (merged) {
+      series.current.candles.update(merged);
+      lastPrice.current = { price: merged.close, up: merged.close >= merged.open };
+    } else if (tf < 5 && liveConnects(lastHistory.current, candle, tf)) {
+      lastPrice.current = { ...lastPrice.current, price: candle.close };   // 1m: live price on the label only
+    }
+  }, [market, preview, previewCurrent, view, tf]);
+
+  // TradingView-style label on the price scale: current price and time left in the candle.
+  const toClose = secondsToClose(nowMs / 1000, tf);
+  useEffect(() => {
+    const s = series.current;
+    if (!s.candles || !lastPrice.current || !market?.available) return;
+    const opts = { price: lastPrice.current.price, color: lastPrice.current.up ? "#10b981" : "#ef4444",
+      lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: true, title: formatCountdown(toClose) };
+    if (s.countdown) s.countdown.applyOptions(opts);
+    else s.countdown = s.candles.createPriceLine(opts);
+  }, [toClose, market, preview, tf]);
 
   const quoteStatus = previewError ? "QUOTE OFFLINE"
     : previewCurrent ? `LIVE QUOTE · ${previewAge}s old`
       : preview?.view === view && preview?.available ? "QUOTE STALE" : "CLOSED CANDLES ONLY";
 
   const now = new Date(nowMs);
-  const nextClose = 300 - (Math.floor(nowMs / 1000) % 300);   // seconds until the 5m candle closes
   const lastClosed = market?.view === view ? market?.last_bar_ts : null;
 
   return (
@@ -136,7 +168,8 @@ export default function Chart({ market, preview, previewError, marketError, view
           <span className="ml-1 hidden text-slate-500 sm:inline">({localZone})</span>
         </div>
         <div className="rounded bg-slate-950/85 px-2 py-1 text-slate-300 ring-1 ring-slate-700">
-          Next 5m close in {Math.floor(nextClose / 60)}:{String(nextClose % 60).padStart(2, "0")}
+          {TF_LABEL[tf]} candle closes in <span className="font-mono">{formatCountdown(toClose)}</span>
+          {tf !== 5 && <span className="hidden sm:inline"> · signals use 5m bars</span>}
           {lastClosed && <span className="hidden sm:inline"> · last closed bar {nyTick.format(new Date(lastClosed * 1000))} NY</span>}
         </div>
         <div className={`rounded px-2 py-1 font-semibold ring-1 ${

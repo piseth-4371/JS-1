@@ -100,8 +100,23 @@ function NewsCard({ n }) {
 }
 
 const CHART_CHOICES = [[null, "Auto"], ["nas100", "NAS100"], ["btc", "BTC"], ["gold", "Gold"]];
+const TF_CHOICES = [[1, "1m"], [5, "5m"], [15, "15m"], [60, "1h"], [240, "4h"]];
 
-function AnalysisCard({ c, market, preview, previewError, marketError, view, chartPick, setChartPick }) {
+function Buttons({ choices, value, onPick, label }) {
+  return (
+    <div className="flex overflow-hidden rounded-md ring-1 ring-slate-700" role="group" aria-label={label}
+      title="Changes only the chart. Signals are found automatically on all markets from 5-minute bars.">
+      {choices.map(([key, text]) => (
+        <button key={text} type="button" aria-pressed={value === key} onClick={() => onPick(key)}
+          className={`px-2.5 py-1 text-xs font-medium sm:px-3 ${value === key ? "bg-sky-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}>
+          {text}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function AnalysisCard({ c, market, preview, previewError, marketError, view, chartPick, setChartPick, tf, setTf }) {
   const why = c.signal?.reason ?? (c.practice[0] ? `Practice setup: ${c.practice[0].reason}` : c.headline);
   const levels = market?.available ? Object.entries(market.levels ?? {}) : [];
   const fvgs = market?.available ? [...(market.fvgs ?? [])].reverse().slice(0, 3) : [];
@@ -109,19 +124,14 @@ function AnalysisCard({ c, market, preview, previewError, marketError, view, cha
     <div className="card">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="label">3 · Market analysis — why this signal</div>
-        <div className="flex overflow-hidden rounded-md ring-1 ring-slate-700" role="group"
-          aria-label="Which market the chart shows (view only)" title="Changes only the chart. Signals are found automatically on all markets.">
-          {CHART_CHOICES.map(([key, label]) => (
-            <button key={label} type="button" aria-pressed={chartPick === key} onClick={() => setChartPick(key)}
-              className={`px-3 py-1 text-xs font-medium ${chartPick === key ? "bg-sky-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}>
-              {label}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-2">
+          <Buttons choices={CHART_CHOICES} value={chartPick} onPick={setChartPick} label="Which market the chart shows (view only)" />
+          <Buttons choices={TF_CHOICES} value={tf} onPick={setTf} label="Chart timeframe (view only)" />
         </div>
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Chart market={market} preview={preview} previewError={previewError} marketError={marketError} view={view} />
+          <Chart market={market} preview={preview} previewError={previewError} marketError={marketError} view={view} tf={tf} />
         </div>
         <div>
           <p className="rounded-md bg-slate-800/50 p-2 text-sm text-slate-200 ring-1 ring-slate-700">{why}</p>
@@ -195,7 +205,7 @@ function ResultsCard({ r }) {
 }
 
 export default function SimpleView({ scan, ov, signals, metrics, backendDown, market, preview, previewError, marketError, view,
-  chartPick, setChartPick }) {
+  chartPick, setChartPick, tf, setTf }) {
   const now = Date.now() / 1000;
   const live = backendDown ? null : scan;
   const c = signalCard({ scan: live, ov: backendDown ? null : ov, signals, now });
@@ -206,7 +216,7 @@ export default function SimpleView({ scan, ov, signals, metrics, backendDown, ma
         <NewsCard n={newsCard(backendDown ? null : ov, now)} />
       </div>
       <AnalysisCard c={c} market={market} preview={preview} previewError={previewError} marketError={marketError} view={view}
-        chartPick={chartPick} setChartPick={setChartPick} />
+        chartPick={chartPick} setChartPick={setChartPick} tf={tf} setTf={setTf} />
       <ResultsCard r={resultsCard(live, metrics)} />
     </div>
   );

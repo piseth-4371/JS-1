@@ -1,4 +1,4 @@
-"""Market analysis for the chart: 5m candles, EMA/VWAP lines, today's
+"""Market analysis for the chart: candles (5m by default, or 1m/15m/1h/4h for viewing), EMA/VWAP lines, today's
 liquidity levels, recent Fair Value Gaps and the 15m trend bias.
 
 Every value comes from stored bars (source + timestamp included). Nothing is invented.
@@ -10,6 +10,8 @@ import logging
 import math
 import time
 from typing import Literal
+
+import pandas as pd
 
 from fastapi import APIRouter, Query
 
@@ -26,6 +28,22 @@ log = logging.getLogger("market_preview")
 
 def _num(x):
     return None if x is None or (isinstance(x, float) and math.isnan(x)) else float(x)
+
+
+CHART_TIMEFRAMES = (1, 5, 15, 60, 240)   # minutes; display only, strategies always use their own bars
+CHART_BARS = 300                         # candles sent for timeframes other than 5m
+
+
+def resample_candles(m1: pd.DataFrame, tf: int, count: int = CHART_BARS) -> list[dict]:
+    """Group closed 1-minute bars into tf-minute candles stamped at their start (aligned to UTC epoch multiples).
+    The newest candle may be still forming: it holds only the minutes closed so far."""
+    if m1.empty:
+        return []
+    bucket = (m1["ts"] // (tf * 60)) * (tf * 60)
+    g = m1.groupby(bucket, sort=True).agg(o=("o", "first"), h=("h", "max"), l=("l", "min"), c=("c", "last"))
+    g = g.tail(count)
+    return [{"time": int(t), "open": float(r.o), "high": float(r.h), "low": float(r.l), "close": float(r.c)}
+            for t, r in g.iterrows()]
 
 
 @router.get("/preview")
@@ -52,14 +70,20 @@ async def preview(market: Literal["nas100", "btc"] = "nas100") -> dict:
 
 
 @router.get("/analysis")
-def analysis(hours: int = Query(12, ge=1, le=72), source: str | None = None, symbol: str | None = None) -> dict:
+def analysis(hours: int = Query(12, ge=1, le=72), source: str | None = None, symbol: str | None = None,
+             tf: int = Query(5)) -> dict:
+    """tf only changes the candles sent for the chart (1, 5, 15, 60 or 240 minutes). Trend, ATR, levels, FVGs
+    and the EMA/VWAP lines always come from the 5-minute frame the strategies use."""
+    if tf not in CHART_TIMEFRAMES:
+        from fastapi import HTTPException
+        raise HTTPException(422, f"tf must be one of {CHART_TIMEFRAMES}")
     st = get_settings()
     source = source or st.engine_source
     symbol = symbol or st.mt5_symbol
     now = int(time.time())
     m1 = load_m1(source, symbol, now - HISTORY_DAYS * 86400, now + 60)
     m1 = m1[m1["ts"] + 60 <= now]
-    base = {"source": source, "symbol": symbol, "generated_ts": now}
+    base = {"source": source, "symbol": symbol, "generated_ts": now, "tf": tf}
     if m1.empty:
         return {**base, "available": False, "message": "No bars stored for this source yet."}
 
@@ -71,6 +95,8 @@ def analysis(hours: int = Query(12, ge=1, le=72), source: str | None = None, sym
 
     candles = [{"time": int(a["ts"][i]), "open": float(a["o"][i]), "high": float(a["h"][i]),
                 "low": float(a["l"][i]), "close": float(a["c"][i])} for i in idx]
+    if tf != 5:
+        candles = resample_candles(m1, tf)
 
     def line(col):
         return [{"time": int(a["ts"][i]), "value": float(a[col][i])} for i in idx if _num(a[col][i]) is not None]

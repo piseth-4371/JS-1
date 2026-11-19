@@ -11,6 +11,7 @@ const FEEDS = {
   btc: "/api/market/analysis?hours=12&source=binance&symbol=BTCUSDT",
   gold: "/api/market/analysis?hours=12&symbol=XAUUSD", // scanner-only market, no paper book
 };
+const CHART_TFS = [1, 5, 15, 60, 240]; // minutes, must match api_market.CHART_TIMEFRAMES
 const PREVIEW_MARKETS = ["nas100", "btc"]; // the quote preview exists only for the paper books
 
 export default function App() {
@@ -28,8 +29,18 @@ export default function App() {
   // market to look at. The pick only changes the chart: signals and strategies are never chosen here.
   const [chartPick, setChartPick] = useState(null);
   const view = chartPick ?? autoMarket(signalCard({ scan: backendDown ? null : scan, ov: backendDown ? null : ov, signals, now: Date.now() / 1000 }), scan, ov);
+  // Chart timeframe (display only; strategies always use their own 5-minute bars). Remembered per browser.
+  const [tf, setTfState] = useState(() => {
+    try { const v = Number(localStorage.getItem("chartTf")); return CHART_TFS.includes(v) ? v : 5; } catch { return 5; }
+  });
+  const setTf = (v) => {
+    setTfState(v);
+    try { localStorage.setItem("chartTf", String(v)); } catch { /* storage blocked: keep for this visit */ }
+  };
   const viewRef = useRef(view);
   viewRef.current = view;
+  const tfRef = useRef(tf);
+  tfRef.current = tf;
   const analysisSequence = useRef(0);
   const previewSequence = useRef(0);
   const analysisRequest = useRef(null);
@@ -58,16 +69,19 @@ export default function App() {
 
   const refreshMarket = useCallback(async () => {
     const requestedView = viewRef.current;
-    if (analysisRequest.current?.view === requestedView) return;
-    const request = { view: requestedView, sequence: ++analysisSequence.current };
+    const requestedTf = tfRef.current;
+    if (analysisRequest.current?.view === requestedView && analysisRequest.current?.tf === requestedTf) return;
+    const request = { view: requestedView, tf: requestedTf, sequence: ++analysisSequence.current };
     analysisRequest.current = request;
+    const outdated = () => request.sequence !== analysisSequence.current || requestedView !== viewRef.current
+      || requestedTf !== tfRef.current;
     try {
-      const data = await getJSON(FEEDS[requestedView]);
-      if (request.sequence !== analysisSequence.current || requestedView !== viewRef.current) return;
-      setMarket({ ...data, view: requestedView });
+      const data = await getJSON(`${FEEDS[requestedView]}&tf=${requestedTf}`);
+      if (outdated()) return;
+      setMarket({ ...data, view: requestedView, tf: requestedTf });
       setMarketError(null);
     } catch (error) {
-      if (request.sequence !== analysisSequence.current || requestedView !== viewRef.current) return;
+      if (outdated()) return;
       setMarketError(error.message);
     } finally {
       if (analysisRequest.current === request) analysisRequest.current = null;
@@ -122,7 +136,7 @@ export default function App() {
     const analysisTimer = setInterval(refreshMarket, POLL_MS);
     const previewTimer = setInterval(refreshPreview, PREVIEW_POLL_MS);
     return () => { clearInterval(analysisTimer); clearInterval(previewTimer); };
-  }, [view, refreshMarket, refreshPreview]);
+  }, [view, tf, refreshMarket, refreshPreview]);
 
   const bookInfo = ov?.markets?.find((m) => m.key === view);
 
@@ -151,8 +165,8 @@ export default function App() {
           </div>
         )}
         <SimpleView scan={scan} ov={ov} signals={signals} metrics={metrics} backendDown={backendDown}
-          market={market?.view === view ? market : null} preview={preview} previewError={previewError}
-          marketError={marketError} view={view} chartPick={chartPick} setChartPick={setChartPick} />
+          market={market?.view === view && market?.tf === tf ? market : null} preview={preview} previewError={previewError}
+          marketError={marketError} view={view} chartPick={chartPick} setChartPick={setChartPick} tf={tf} setTf={setTf} />
         <footer className="pb-4 text-center text-xs text-slate-500">
           Paper trading only · simulated signals and fills · NAS100, BTC and gold checked automatically · times in New York time (chart clock also shows your local time)
         </footer>
