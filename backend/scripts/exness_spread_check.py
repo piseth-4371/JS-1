@@ -69,10 +69,10 @@ def read_exness(path: Path) -> tuple[pd.DataFrame, int, int]:
     return out.reset_index(drop=True), total, bad
 
 
-def in_window(d: pd.DataFrame) -> pd.DataFrame:
+def in_window(d: pd.DataFrame, year: int = YEAR) -> pd.DataFrame:
     ny = pd.to_datetime(d["ts"], unit="s", utc=True).dt.tz_convert("America/New_York")
     mod = ny.dt.hour * 60 + ny.dt.minute
-    keep = (ny.dt.year == YEAR) & (ny.dt.day_of_week < 5) & (mod >= dq.WINDOW_START_MIN) & (mod < dq.WINDOW_END_MIN)
+    keep = (ny.dt.year == year) & (ny.dt.day_of_week < 5) & (mod >= dq.WINDOW_START_MIN) & (mod < dq.WINDOW_END_MIN)
     return d.assign(ny_date=ny.dt.date, hour=ny.dt.hour, mod=mod)[keep].reset_index(drop=True)
 
 
