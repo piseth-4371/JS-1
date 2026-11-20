@@ -35,7 +35,7 @@ def test_calendar_file_is_complete_and_sourced():
     assert {r["event"] for r in rows} == set(news.EVENTS)
     assert len({(r["date"], r["event"]) for r in rows}) == len(rows)          # no duplicates
     per_year = Counter((r["date"][:4], r["event"]) for r in rows)
-    for y in range(2019, 2027):
+    for y in range(2019, 2028):
         assert per_year[(str(y), "FOMC")] >= 8, y
         expected_bls = 11 if y == 2025 else 12           # Oct 2025 reports never published (shutdown)
         assert per_year[(str(y), "CPI")] == expected_bls and per_year[(str(y), "NFP")] == expected_bls, y
@@ -74,7 +74,8 @@ def test_blackout_is_30_minutes_each_side():
 def test_reasons_inside_outside_and_beyond_the_calendar():
     assert "CPI 2024-05-15 08:30 ET" in news.entry_block_reason(ny(2024, 5, 15, 8, 45))
     assert news.entry_block_reason(ny(2024, 5, 15, 10, 0)) is None
-    assert "does not cover" in news.entry_block_reason(ny(2027, 1, 5, 10, 0))
+    assert news.entry_block_reason(ny(2027, 1, 5, 10, 0)) is None                # 2027 is covered now
+    assert "does not cover" in news.entry_block_reason(ny(2028, 1, 5, 10, 0))
 
 
 # ---------------------------------------------------------------- backtester
@@ -132,3 +133,12 @@ def test_broker_cancels_pending_order_when_news_window_opens(setup):
     with Session(get_engine()) as s:
         o = s.scalars(select(OrderRow)).one()
         assert o.status == "cancelled" and o.status_reason.startswith("news blackout")
+
+
+def test_2027_scheduled_events():
+    labels = {e.label for e in news.load_events()}
+    for lab in ("CPI 2027-01-13 08:30 ET", "NFP 2027-01-08 08:30 ET", "FOMC 2027-01-27 14:00 ET",
+                "FOMC 2027-11-17 14:00 ET", "GDP 2027-01-28 08:30 ET", "PCE 2027-12-22 08:30 ET"):
+        assert lab in labels, lab
+    assert not any(lab.startswith("FOMC 2027-12") for lab in labels)       # no December meeting in 2027
+    assert news.entry_block_reason(ny(2027, 3, 10, 8, 45)).startswith("High-impact news blackout: CPI")

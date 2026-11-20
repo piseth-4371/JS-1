@@ -28,7 +28,7 @@ Times America/New_York. Closed bars only.
 - Entries 09:45–11:30 only; flat by 15:55.
 - 5m FVG: c3.low > c1.high (bull), c2 body ≥ 1.0×ATR14, gap ≥ 0.15×ATR14, close on bias side of session VWAP.
 - Entry limit at FVG midpoint, expires after 6 bars. SL = c1.low − 0.10×ATR; stop distance must be 0.5–2.0×ATR.
-- TP fixed 2.0R. Avoid ±30 min of high-impact US news (implemented in `core/news.py` for CPI/NFP/FOMC/GDP/PCE; calendar `app/calendar/us_high_impact_events.csv`, valid to 2026-12-31 — extend it from BLS/Fed/BEA sources before 2027), extreme ATR, stale/gappy data.
+- TP fixed 2.0R. Avoid ±30 min of high-impact US news (implemented in `core/news.py` for CPI/NFP/FOMC/GDP/PCE; calendar `app/calendar/us_high_impact_events.csv`, valid to 2027-12-31 — 2027 added 2026-11-20 from the official BLS, Fed and BEA schedules; extend it the same way before 2028. Outside its coverage the engine takes no new trades), extreme ATR, stale/gappy data.
 
 ## 4. Risk restrictions (NEVER raise without explicit owner approval)
 - Virtual balance: **$1,000 paper** (owner approved 2026-11-13, was $10). Virtual money only; risk % limits unchanged.

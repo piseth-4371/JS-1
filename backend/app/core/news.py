@@ -11,6 +11,10 @@ Calendar: app/calendar/us_high_impact_events.csv - every row has its official so
   (bea.gov/news/archive, each page's published time, mostly 08:30; some PCE at 10:00 ET);
   releases not yet archived from BEA's schedule file apps.bea.gov/API/signup/release_dates.json
   (both fetched 2026-11-13). Two posting-jitter times (08:29:59, 08:31) were set to the 08:30 schedule.
+- 2027 (added 2026-11-20, all scheduled, not yet released): CPI and NFP from the BLS schedule pages,
+  FOMC from the Fed calendar (statement at the usual 2:00 p.m. on the last meeting day; dates tentative until
+  confirmed; October 26-27 is also listed as a 'Monetary Policy Strategy Meeting'; no December meeting),
+  GDP and PCE from BEA's schedule file. Re-check them when a date nears: agencies sometimes move releases.
 Not included: PPI, retail sales, jobless claims, ISM and other medium-impact releases.
 
 Rules (the same in the backtester and the live engine):
@@ -37,7 +41,7 @@ CALENDAR = Path(__file__).resolve().parent.parent / "calendar" / "us_high_impact
 # docs/news_effect_report.md). Information only: the blackout rule does not use it.
 EFFECTS = CALENDAR.parent / "news_effect.json"
 EFFECT_MARKETS = ("nas100", "gold", "btc")
-COVERED_FROM, COVERED_UNTIL = date(2019, 1, 1), date(2027, 1, 1)   # until = exclusive
+COVERED_FROM, COVERED_UNTIL = date(2019, 1, 1), date(2028, 1, 1)   # until = exclusive; extend before 2028
 WINDOW = 30 * 60                                                    # seconds before and after
 EVENTS = ("CPI", "NFP", "FOMC", "GDP", "PCE")
 
