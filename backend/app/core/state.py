@@ -9,6 +9,7 @@ from app.models import ControlRow, EventRow
 
 DEFAULTS = {
     "kill_switch": "false",
+    "kill_switch_ts": "0",            # when KILL was last pressed (cooling-off before reset, app/core/manual.py)
     "auto_trading": "false",          # OFF by default: the engine only records signals
     "active_strategy": "trend_fvg",
     "broker_cursor_ts": "0",          # last 1-minute bar the paper broker processed (NAS100 book)

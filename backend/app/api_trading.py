@@ -6,6 +6,7 @@ positions immediately, turns auto-trading off, and is stored in the database.
 from __future__ import annotations
 
 import time
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -13,7 +14,8 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.core import news, state
+from app.core import manual, news, state
+from app.core.news import NY
 from app.core.markets import BTCUSD, MARKETS, NAS100, Market, market_for_strategy
 from app.core.paper_broker import PaperBroker
 from app.core.risk import RiskSettings
@@ -80,6 +82,8 @@ def overview() -> dict:
             "open_positions": [_row(p) for p in b.all_open_positions()],
             "pending_orders": [_row(o) for o in b.all_pending_orders()],
             "kill_switch": acct.kill_switch,
+            "kill_reset_after": manual.reset_allowed(int(state.get(s, "kill_switch_ts")), int(time.time()))[1]
+                                if acct.kill_switch else None,
             "auto_trading": state.get_bool(s, "auto_trading"),
             "active_strategy": state.get(s, "active_strategy"),
             "engine_enabled": st.engine_enabled,
@@ -126,10 +130,16 @@ def events(limit: int = 100) -> list[dict]:
 
 class Toggle(BaseModel):
     enabled: bool
+    reason: str | None = None
 
 
 class StrategyChoice(BaseModel):
     name: str
+    reason: str | None = None
+
+
+class Reason(BaseModel):
+    reason: str | None = None
 
 
 @router.post("/controls/auto-trading")
@@ -138,12 +148,14 @@ def set_auto_trading(body: Toggle) -> dict:
         if body.enabled and state.get_bool(s, "kill_switch"):
             raise HTTPException(409, "Kill switch is ON. Reset it first.")
         state.put(s, "auto_trading", body.enabled)
-        state.log(s, "INFO", "control", f"Auto-trading {'ON' if body.enabled else 'OFF'} (by user)")
+        state.log(s, "INFO", manual.TYPE,
+                  manual.message(f"Auto-trading {'ON' if body.enabled else 'OFF'}", manual.clean_reason(body.reason)))
     return {"auto_trading": body.enabled}
 
 
 @router.post("/controls/kill")
-def kill() -> dict:
+def kill(body: Reason | None = None) -> dict:
+    """Never delayed and never needs a reason: it is the emergency stop."""
     now = int(time.time())
     st = get_settings()
     with Session(get_engine()) as s, s.begin():
@@ -152,15 +164,26 @@ def kill() -> dict:
         for m in MARKETS.values():                   # each book is closed at its OWN last price
             last = _last_bar(s, m)
             _broker(s, m).kill(last.close if last else None, now)
-        state.log(s, "WARN", "kill_switch", "KILL SWITCH activated by user", now)
+        state.put(s, "kill_switch_ts", now)
+        state.log(s, "WARN", manual.TYPE, manual.message("KILL SWITCH activated", manual.clean_reason(body and body.reason)), now)
     return {"kill_switch": True, "auto_trading": False}
 
 
 @router.post("/controls/reset-kill")
-def reset_kill() -> dict:
+def reset_kill(body: Reason | None = None) -> dict:
+    """Needs a reason, and waits until the next New York day unless it is an undo within 2 minutes."""
+    reason = manual.clean_reason(body and body.reason)
+    if len(reason) < manual.MIN_REASON:
+        raise HTTPException(400, f"Write why you are resetting the kill switch (at least {manual.MIN_REASON} characters).")
+    now = int(time.time())
     with Session(get_engine()) as s, s.begin():
+        ok, after = manual.reset_allowed(int(state.get(s, "kill_switch_ts")), now)
+        if not ok:
+            when = datetime.fromtimestamp(after, NY).strftime("%Y-%m-%d %H:%M")
+            raise HTTPException(409, f"Cooling-off: the kill switch can be reset from {when} New York time "
+                                     "(the next New York day). Only a misclick can be undone in the first 2 minutes.")
         state.put(s, "kill_switch", False)
-        state.log(s, "INFO", "kill_switch", "Kill switch reset by user (auto-trading stays OFF)")
+        state.log(s, "INFO", manual.TYPE, manual.message("Kill switch reset (auto-trading stays OFF)", reason), now)
     return {"kill_switch": False, "auto_trading": False}
 
 
@@ -171,7 +194,8 @@ def set_strategy(body: StrategyChoice) -> dict:
     with Session(get_engine()) as s, s.begin():
         m = market_for_strategy(body.name)
         state.put(s, m.strategy_key, body.name)
-        state.log(s, "INFO", "control", f"{m.label}: active strategy set to {body.name}")
+        state.log(s, "INFO", manual.TYPE,
+                  manual.message(f"{m.label}: active strategy set to {body.name}", manual.clean_reason(body.reason)))
     return {"active_strategy": body.name, "market": m.key}
 
 

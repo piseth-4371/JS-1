@@ -119,7 +119,8 @@ def test_kill_switch_cancels_closes_and_blocks(setup):
     assert count(PositionRow, PositionRow.exit_reason == "kill_switch") == 1
     assert eng.cycle(ny(10, 2) + 5).status == "KILLED"
     assert client.post("/api/controls/auto-trading", json={"enabled": True}).status_code == 409
-    client.post("/api/controls/reset-kill")
+    assert client.post("/api/controls/reset-kill").status_code == 400          # a reason is required
+    assert client.post("/api/controls/reset-kill", json={"reason": "test misclick"}).status_code == 200  # undo window
     assert client.get("/api/overview").json()["kill_switch"] is False
 
 

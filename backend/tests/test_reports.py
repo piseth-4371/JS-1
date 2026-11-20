@@ -88,3 +88,27 @@ def test_tom_messages_sent_once_per_status(temp_db, monkeypatch):
         done = reports.messages(s, ts(2026, 11, 4, 17), monthly=False)
         assert len(done) == 1 and "finished" in done[0] and "+1.94%" in done[0]
         assert reports.messages(s, ts(2026, 11, 5, 9), monthly=False) == []
+
+
+def test_monthly_message_process_line(temp_db):
+    from app.core import state
+    from app.models import EventRow, SignalRow
+    with Session(get_engine()) as s, s.begin():
+        s.add(PositionRow(order_id=1, strategy="orb", side=1, kind="market", qty=0.1, entry=1, stop=0, target=2,
+                          opened_ts=ts(2026, 11, 3, 10), status="closed", closed_ts=ts(2026, 11, 3, 11),
+                          exit_price=2, exit_reason="target", pnl_usd=5.0, r=2.0, risk_pts=1))
+        s.add(PositionRow(order_id=2, strategy="orb", side=1, kind="market", qty=0.1, entry=1, stop=0, target=2,
+                          opened_ts=ts(2026, 11, 4, 10), status="closed", closed_ts=ts(2026, 11, 4, 11),
+                          exit_price=1, exit_reason="kill_switch", pnl_usd=0.0, r=0.0, risk_pts=1))
+        state.log(s, "WARN", "manual", "KILL SWITCH activated (by user). Reason: felt nervous", ts(2026, 11, 4, 11))
+        state.log(s, "INFO", "manual", "Kill switch reset (auto-trading stays OFF) (by user). Reason: calm",
+                  ts(2026, 11, 5, 9))
+        state.log(s, "INFO", "manual", "KILL SWITCH activated (by user). Reason: old", ts(2026, 10, 30, 9))  # other month
+        s.add(SignalRow(strategy="orb", bar_close_ts=ts(2026, 11, 6, 10), created_ts=0, action="LONG", data_source="x",
+                        data_ts=0, risk_approved=False, risk_reasons=["busy"]))
+        s.flush()
+        txt = reports.monthly_message(s, "2026-11", EMPTY_TOM)
+    assert ("Process: paper trades ended by the plan 1 of 2 · manual actions 2 (KILL 1, reset 1, other 0) · "
+            "risk manager said no to 1 paper signals") in txt
+    assert "11-04 11:00 KILL SWITCH activated (by user). Reason: felt nervous" in txt
+    assert "Reason: old" not in txt

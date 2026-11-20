@@ -31,11 +31,20 @@ export default function Header({ ov, market, preview, marketError, previewError,
     }
   };
 
+  // KILL is never delayed: one dialog, the reason is optional (Cancel = do nothing).
   const kill = () => {
-    if (window.confirm("KILL SWITCH: cancel all orders, close all positions and turn auto-trading OFF?")) {
-      act(() => postJSON("/api/controls/kill"));
-    }
+    const reason = window.prompt(
+      "KILL SWITCH: cancel all orders, close all positions and turn auto-trading OFF.\n\n"
+      + "Why? (optional, saved in the log; leave empty and press OK to stop now)", "");
+    if (reason !== null) act(() => postJSON("/api/controls/kill", { reason }));
   };
+
+  // Reset needs a written reason and, after the first 2 minutes, waits for the next New York day (cooling-off).
+  const resetKill = () => {
+    const reason = window.prompt("Why are you resetting the kill switch? (at least 5 characters, saved in the log)", "");
+    if (reason !== null) act(() => postJSON("/api/controls/reset-kill", { reason }));
+  };
+  const resetAfter = ov?.kill_reset_after ?? null;
 
   const shownMarket = market?.view === view ? market : null;
   const loadingMarket = !shownMarket && !marketError;
@@ -60,10 +69,17 @@ export default function Header({ ov, market, preview, marketError, previewError,
 
         <div className="ml-auto flex items-center gap-2">
           {ov?.kill_switch ? (
-            <button className="btn bg-amber-600 text-white" disabled={busy}
-              onClick={() => act(() => postJSON("/api/controls/reset-kill"))}>
-              Reset kill switch
-            </button>
+            resetAfter ? (
+              <span className="rounded-md bg-slate-800 px-2 py-1 text-xs text-amber-200 ring-1 ring-amber-500/40"
+                title="Cooling-off: a reset waits for the next New York day, so the decision is not made in the heat of the moment.">
+                Kill switch ON · reset from {nyTime(resetAfter)} NY
+              </span>
+            ) : (
+              <button className="btn bg-amber-600 text-white" disabled={busy} onClick={resetKill}
+                title="Asks why. Allowed in the first 2 minutes (misclick) or from the next New York day.">
+                Reset kill switch
+              </button>
+            )
           ) : (
             <button className="btn bg-red-600 font-bold text-white hover:bg-red-500" disabled={busy || !ov} onClick={kill}>
               ■ KILL

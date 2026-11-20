@@ -10,9 +10,9 @@ from datetime import datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core import drawdown_check, state, tom_forward
+from app.core import drawdown_check, manual, state, tom_forward
 from app.core.news import NY
-from app.models import PositionRow, ScannerExecutionRow, ScannerSignalRow
+from app.models import EventRow, PositionRow, ScannerExecutionRow, ScannerSignalRow, SignalRow
 
 MARKETS = {"nas100": "NAS100", "gold": "Gold", "btc": "BTC"}
 
@@ -62,6 +62,26 @@ def _line(label: str, rs: list[float]) -> str:
             f" · worst drop {_neg(dd)}R")
 
 
+def process_lines(s: Session, a: int, b: int, pos: list[PositionRow]) -> list[str]:
+    """Process, not profit (finance-psychology skill: judge the process). Paper trades that ended by the plan,
+    your own manual actions with their reasons, and paper signals the risk manager said no to."""
+    events = list(s.scalars(select(EventRow).where(EventRow.type == manual.TYPE, EventRow.ts >= a, EventRow.ts < b)
+                            .order_by(EventRow.ts, EventRow.id)))
+    kills = sum(e.message.startswith("KILL SWITCH") for e in events)
+    resets = sum(e.message.startswith("Kill switch reset") for e in events)
+    blocked = len(list(s.scalars(select(SignalRow.id).where(SignalRow.risk_approved.is_(False),
+                                                            SignalRow.bar_close_ts >= a, SignalRow.bar_close_ts < b))))
+    by_plan = sum(p.exit_reason != "kill_switch" for p in pos)
+    lines = [f"Process: paper trades ended by the plan {by_plan} of {len(pos)} · manual actions {len(events)} "
+             f"(KILL {kills}, reset {resets}, other {len(events) - kills - resets}) · "
+             f"risk manager said no to {blocked} paper signals"]
+    for e in events[-5:]:
+        lines.append(f"  {datetime.fromtimestamp(e.ts, NY):%m-%d %H:%M} {e.message}")
+    if len(events) > 5:
+        lines.append(f"  (+{len(events) - 5} earlier, see the event log)")
+    return lines
+
+
 def monthly_message(s: Session, ym: str, tom: dict) -> str:
     from app.config import get_settings
     a, b = month_bounds(ym)
@@ -90,6 +110,7 @@ def monthly_message(s: Session, ym: str, tom: dict) -> str:
             lines += drawdown_check.telegram_lines(s)
         except Exception:                        # the summary still goes out without this line
             pass
+    lines += process_lines(s, a, b, pos)
     a_d, b_d = datetime.fromtimestamp(a, NY).date().isoformat(), datetime.fromtimestamp(b, NY).date().isoformat()
     tom_done = [t for t in tom["trades"] if t["status"] == "done" and a_d <= t["exit_date"] < b_d]
     if tom_done:
