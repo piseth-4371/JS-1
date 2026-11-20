@@ -46,7 +46,9 @@ def test_drawdown_math():
     assert reports._neg(0.0) == "0.00" and reports._neg(1.234) == "-1.23"
 
 
-def test_monthly_message_shows_drawdowns(temp_db):
+def test_monthly_message_shows_drawdowns(temp_db, monkeypatch):
+    from app.core import drawdown_check
+    monkeypatch.setattr(drawdown_check, "load_backtest", lambda: {"orb": [1.0, -1.0, -1.0, 2.0] * 10})
     def pos(i, day, pnl, r):
         return PositionRow(order_id=i, strategy="orb", side=1, kind="market", qty=0.1, entry=1, stop=0, target=2,
                            opened_ts=ts(2026, 11, day, 10), status="closed", closed_ts=ts(2026, 11, day, 11),
@@ -61,6 +63,7 @@ def test_monthly_message_shows_drawdowns(temp_db):
     assert "Paper account trades: 4 done · 2 won · 2 lost · total +1.30R · worst drop -1.50R" in txt
     assert "Paper account drawdown: this month -15.00 virtual $ (-1.5%) · biggest ever -15.00 (-1.5%) · now 0.7% below its high" in txt
     assert "Turn-of-month drawdown: biggest 0.00% · now 0.00% below its high" in txt      # two gains in a row
+    assert "Is this drop normal? orb: now 0.70R below its high (biggest 1.50R, backtest biggest 2.00R). Normal" in txt
     assert "Drawdown = the biggest fall from a previous high." in txt
 
 
