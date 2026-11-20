@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core import state, tom_forward
+from app.core import drawdown_check, state, tom_forward
 from app.core.news import NY
 from app.models import PositionRow, ScannerExecutionRow, ScannerSignalRow
 
@@ -86,6 +86,10 @@ def monthly_message(s: Session, ym: str, tom: dict) -> str:
         lines.append(f"Paper account drawdown: this month {_neg(month['max'])} virtual $ ({_neg(month['max_pct'], 1)}%) · "
                      f"biggest ever {_neg(ever['max'])} ({_neg(ever['max_pct'], 1)}%) · "
                      f"now {ever['now_pct']:.1f}% below its high")
+        try:
+            lines += drawdown_check.telegram_lines(s)
+        except Exception:                        # the summary still goes out without this line
+            pass
     a_d, b_d = datetime.fromtimestamp(a, NY).date().isoformat(), datetime.fromtimestamp(b, NY).date().isoformat()
     tom_done = [t for t in tom["trades"] if t["status"] == "done" and a_d <= t["exit_date"] < b_d]
     if tom_done:

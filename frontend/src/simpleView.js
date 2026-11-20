@@ -74,7 +74,19 @@ export function resultsCard(scan, metrics) {
               avgR: closed ? metrics.expectancy_r ?? null : null, pnlUsd: metrics.pnl_usd ?? 0 };
   }
   return { qualified: resultRow(tr?.shown), practice: resultRow(tr?.practice), paper, note: tr?.note ?? null,
-           tom: tomRow(scan?.turn_of_month) };
+           tom: tomRow(scan?.turn_of_month), drawdown: drawdownRows(scan?.drawdown_check) };
+}
+
+// "Is this drop normal?" (backend app/core/drawdown_check.py): paper drawdown vs the same strategy's backtest.
+// Display only; "normal" means normal for that (failed) strategy.
+export function drawdownRows(d) {
+  if (!d || !Array.isArray(d.rows)) return null;
+  return {
+    note: d.note ?? null,
+    rows: d.rows.map((x) => ({ strategy: x.strategy, active: !!x.active, level: x.level, text: x.text,
+      nowR: x.now_r, biggestR: x.biggest_r, backtestBiggestR: x.backtest_biggest_r, paperTrades: x.paper_trades,
+      backtestTrades: x.backtest_trades })),
+  };
 }
 
 // Volatility now (backend app/core/volatility.py): last hour's range vs the same New York hour on earlier days.

@@ -274,6 +274,29 @@ function TomLine({ t }) {
   );
 }
 
+const DD_TONE = { normal: "text-emerald-300", "at high": "text-emerald-300", unusual: "text-amber-300",
+  rare: "text-orange-300", deeper: "text-red-300" };
+
+function DrawdownLine({ d }) {
+  if (!d || !d.rows.length) return null;
+  return (
+    <div className="rounded-md bg-slate-800/50 p-2 ring-1 ring-slate-700">
+      <div className="text-xs font-semibold text-slate-200">Is this drop normal?</div>
+      {d.rows.map((x) => (
+        <div key={x.strategy} className="mt-1 text-sm text-slate-200">
+          <span className="font-semibold">{strategyLabel(x.strategy)}</span>
+          {x.paperTrades > 0 && (
+            <span className="text-slate-400"> · now {x.nowR.toFixed(2)}R below its high · biggest {x.biggestR.toFixed(2)}R
+              {x.backtestTrades ? ` (backtest biggest ${x.backtestBiggestR.toFixed(2)}R)` : ""}</span>
+          )}
+          <div className={`text-xs ${DD_TONE[x.level] ?? "text-slate-400"}`}>{x.text}</div>
+        </div>
+      ))}
+      {d.note && <div className="mt-1 text-xs text-slate-400">{d.note}</div>}
+    </div>
+  );
+}
+
 function ResultsCard({ r }) {
   return (
     <div className="card">
@@ -295,6 +318,7 @@ function ResultsCard({ r }) {
             </div>
           ) : <div className="mt-1 text-sm text-slate-400">No data.</div>}
         </div>
+        <DrawdownLine d={r.drawdown} />
         <TomLine t={r.tom} />
       </div>
       <p className="mt-2 text-xs text-slate-500">

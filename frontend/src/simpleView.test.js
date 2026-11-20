@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { autoMarket, newsCard, resultRow, resultsCard, signalCard, tomRow, volatilityCard } from "./simpleView.js";
+import { autoMarket, drawdownRows, newsCard, resultRow, resultsCard, signalCard, tomRow, volatilityCard } from "./simpleView.js";
 
 const NOW = 1_800_000_000;
 const setup = (over = {}) => ({ market: "nas100", strategy: "silver_bullet", side: "LONG", entry: 100, stop: 95,
@@ -98,4 +98,13 @@ test("the chart market is picked automatically", () => {
   const s = { markets: [{ key: "nas100", state: "closed" }, { key: "gold", state: "open" }] };
   assert.equal(autoMarket({ signal: null, practice: [] }, s, { trading_now: null }), "gold");
   assert.equal(autoMarket(null, null, null), "nas100");
+});
+
+test("drawdown rows map the backend check", () => {
+  assert.equal(drawdownRows(undefined), null);
+  const d = drawdownRows({ note: "n", rows: [{ strategy: "orb", active: true, level: "normal", text: "Normal",
+    now_r: 1, biggest_r: 2, backtest_biggest_r: 9.5, paper_trades: 3, backtest_trades: 419 }] });
+  assert.equal(d.rows[0].level, "normal");
+  assert.equal(d.rows[0].backtestBiggestR, 9.5);
+  assert.equal(resultsCard({ drawdown_check: { rows: [] } }, null).drawdown.rows.length, 0);
 });

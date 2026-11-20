@@ -19,6 +19,15 @@ Written <YYYY-MM-DD>, before any result of this idea was computed. Owner request
 This is evaluation **<N>** in this project (<N-1> so far, <P> passes, `docs/experiment_journal.md`).
 <Has any of this data or a similar rule been looked at before? Say exactly what was seen.>
 
+## Pre-mortem (required, written before any result)
+Imagine it is a year later and this test FAILED. Write the 2-3 most likely reasons, as specific as possible
+(for example: "costs eat the whole edge", "it only worked in 2020", "the published effect is gone",
+"too few trades to tell"). Do not edit this list after a result. The report must say which of them, if any,
+happened.
+1. <reason>
+2. <reason>
+3. <reason>
+
 ## Data
 - <Source, symbol, timeframe, file or table, date range, how gaps are handled (never filled).>
 - **Development: <2019-2022>. Validation: <2023-2024>.** A trade belongs to the period (and year) of its entry time
@@ -91,7 +100,8 @@ Nothing here changes `scanner.QUALIFIED`, a strategy or a risk limit until all o
 
 ## After the result
 - Report: `docs/<idea>_report.md` with every number above, the year-by-year and nearby-settings tables
-  included, failures included.
+  included, failures included, and a "Pre-mortem check" line for each pre-mortem reason: happened / did not
+  happen / cannot tell.
 - Update the journal entry (`outcome`: pass / fail / inconclusive), run `scripts/experiment_journal.py` and
   `--check`, add a row to `docs/decisions.md` and a line to CLAUDE.md section 11.
 - Do not re-run with other settings after seeing the result (that is curve fitting).
