@@ -21,7 +21,7 @@ History: frozen earlier on 2026-11-21 after 21 experiments, 53 strategy evaluati
 - **Still allowed:** bug fixes; upkeep (MT5, backups, Telegram); news calendar before 2028; the study plan (short plan: days 3, 4, 7, 8, 14, 15); the E13 report when its data completes.
 - **Still not allowed:** weekly strategy changes or tweaks (curve fitting); new dashboard features; more than one new idea; hosting/VPS work.
 - E21 (turn-of-month paper forward test) keeps running on its own; no verdict before 36 trades (about 2029).
-- **Team (2026-11-21):** the main session is the leader; subagents in `.claude/agents/` are `builder` (writes code), `tester` (runs tests, read-only) and `reviewer` (checks for bugs and rule breaks, read-only). Flow: builder → tester → reviewer → leader reports to the owner. Small tasks the leader does alone. Only the leader commits or pushes, and only when the owner asks.
+- **Team (2026-11-21):** the main session is the leader; subagents in `.claude/agents/` are `builder` (writes code), `tester` (runs tests, read-only) and `reviewer` (checks for bugs and rule breaks, read-only). Flow: builder → tester → reviewer → leader reports to the owner. Small tasks the leader does alone. Only the leader commits or pushes, and only when the owner asks. One word runs it: `/team` (health check) or `/team <task>` (`.claude/skills/team/SKILL.md`).
 
 ## 3. Current mode — learning lab (since 2026-11-14)
 - Every strategy tested so far FAILS its pre-registered dev (2019–2022) + validation (2023–2024) test: 7 NAS100, 5 BTC, 2 daily trend, 1 intraday momentum, 7 gold. Scoreboard: `docs/lessons.md`. The 2025+ out-of-sample test has never been run (nothing qualifies).
