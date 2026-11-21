@@ -12,8 +12,8 @@ Success = rules followed, zero risk violations, reproducible backtest, working k
 - Weekend book: BTCUSDT from **Binance public market data** (no account, no key). Paper only; never send orders to Binance.
 - Frontend (Day 5): React + Vite + Tailwind + lightweight-charts
 
-## 2a. FROZEN AGAIN (2026-11-21) — read this first
-**Status now:** the one unfreeze idea (E22, buy the drop) was run once and FAILED (negative observed result), so the project is **frozen again**. No new strategy idea without the owner saying so in words. The weekly health check keeps running. The rules below are kept as history and still apply to any future one-idea unfreeze.
+## 2a. ONE FOREX IDEA (owner decision 2026-11-21) — read this first
+**Status now:** E22 (buy the drop) failed and the project was frozen. The same day the owner chose "Option B": unfreeze for ONE forex idea, **carry** (owner: "yes carry, download the data"), under the same one-idea rules below (pre-registered, run once, no tweaks; fail or inconclusive = frozen again). No other change is allowed by this: no forex dashboard, no chart lines, no second idea. The weekly health check keeps running.
 
 History: frozen earlier on 2026-11-21 after 21 experiments, 53 strategy evaluations, 0 passes. The same day the owner unfroze it **for ONE new strategy idea only**, plus a weekly health check.
 - **The one idea:** must be genuinely different from everything in `docs/experiment_journal.md` (no FVG/sweep/ORB/VWAP/silver-bullet variants, no new filters on old strategies). The owner picks it. Pre-register it from `docs/preregistration_template.md` (year-by-year, nearby settings, pre-mortem) and commit the rules BEFORE any result. Run it ONCE. Exness cost gate applies. No tweaks after the result.
