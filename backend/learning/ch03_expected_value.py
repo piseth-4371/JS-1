@@ -3,7 +3,7 @@
 Question for today: which of the 7 NAS100 strategies are "roulette", meaning bets that lose
 money ON AVERAGE, so the more you play, the more you lose?
 
-Your job: replace every TODO line `raise NotImplementedError` with real code (one to three lines each).
+Worked example: the answers are filled in below (owner's choice, 2026-11-21). Read each one (one to three lines each).
 
 Check yourself (from the backend folder):
     .\\.venv\\Scripts\\python -m pytest learning\\check_ch03.py -q
@@ -20,33 +20,33 @@ Hints:
 
 def average(values: list[float]) -> float:
     """The plain average (mean) of a list. Return 0.0 for an empty list."""
-    # TODO: sum divided by count, but watch out for an empty list
-    raise NotImplementedError
+    # Hint: sum divided by count, but watch out for an empty list
+    return sum(values) / len(values) if values else 0.0          # empty list -> 0, never divide by 0
 
 
 def win_rate(r_list: list[float]) -> float:
     """Share of trades with r > 0, as a number from 0 to 1 (0.4 = 40 %). Empty list -> 0.0."""
-    # TODO: count the winners, divide by the number of trades
-    raise NotImplementedError
+    # Hint: count the winners, divide by the number of trades
+    return sum(1 for r in r_list if r > 0) / len(r_list) if r_list else 0.0   # 0R is not a win
 
 
 def expected_value(p_win: float, avg_win: float, avg_loss: float) -> float:
     """EV of one bet. `avg_loss` is negative (for example -1.0). P(loss) = 1 - p_win."""
-    # TODO: one line, the formula in the hints above
-    raise NotImplementedError
+    # Hint: one line, the formula in the hints above
+    return p_win * avg_win + (1 - p_win) * avg_loss              # avg_loss is negative
 
 
 def breakeven_win_rate(avg_win: float, avg_loss: float) -> float:
     """The win rate that makes EV exactly 0. Solve  p * avg_win + (1 - p) * avg_loss = 0  for p.
     Example: win +2R, lose -1R  ->  you need to win only 1/3 of the time to break even."""
-    # TODO: one line of algebra. Try it on paper first.
-    raise NotImplementedError
+    # Hint: one line of algebra. Try it on paper first.
+    return -avg_loss / (avg_win - avg_loss)                      # from p*win + (1-p)*loss = 0
 
 
 def is_roulette(r_list: list[float]) -> bool:
     """True if the strategy loses on average (its average R is below 0)."""
-    # TODO: one line, using a function you already wrote
-    raise NotImplementedError
+    # Hint: one line, using a function you already wrote
+    return average(r_list) < 0
 
 
 # ---------------------------------------------------------------------------------------------------

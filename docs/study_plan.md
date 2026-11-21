@@ -17,7 +17,10 @@ and practise Python. **Not** to find a new signal.
 ## Short plan (owner's choice, 2026-11-21)
 Days **3, 4, 7, 8, 14, 15** only: expected value, random walk, volatility, Sharpe, Kelly, Monte Carlo.
 They explain why the project found no edge. The other days are optional, for later.
-Day 3 exercise: `backend/learning/ch03_expected_value.py` (ready).
+All 6 short-plan days are written as **worked examples** with the answers filled in (owner's choice, 2026-11-21):
+`ch03_expected_value.py`, `ch04_random_walk.py`, `ch07_volatility.py`, `ch08_sharpe.py`, `ch14_kelly.py`, `ch15_monte_carlo.py`
+(each with its `check_chNN.py`). Test and run all of them in one command, from the `backend` folder:
+`.\.venv\Scripts\python learning\run_all.py`. When it says "You are finished", the short plan is done.
 
 ## The full plan
 | Day | Book chapter | Exercise on your data | Question it answers |
