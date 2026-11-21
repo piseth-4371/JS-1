@@ -31,8 +31,8 @@ Full list: `docs/experiment_journal.md`.
 4. A filter cannot create an edge that is not there.
 5. "No edge found" is a useful answer: it kept real money safe.
 
-**Status:** feature freeze (rules in `CLAUDE.md` section 2a). Only bug fixes, upkeep, and the study plan
-(`docs/study_plan.md`) continue.
+**Status:** frozen, then unfrozen the same day for ONE new pre-registered idea plus a weekly
+health check (rules in `CLAUDE.md` section 2a). No weekly strategy tweaks.
 
 ## Backend quick start (PowerShell)
 

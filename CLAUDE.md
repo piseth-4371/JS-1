@@ -12,13 +12,16 @@ Success = rules followed, zero risk violations, reproducible backtest, working k
 - Weekend book: BTCUSDT from **Binance public market data** (no account, no key). Paper only; never send orders to Binance.
 - Frontend (Day 5): React + Vite + Tailwind + lightweight-charts
 
-## 2a. FEATURE FREEZE (owner decision 2026-11-21) — read this first
-The project is finished as a tool. Result so far: 21 experiments, 53 strategy evaluations, 0 passes.
-- **Allowed:** bug fixes; keeping it running (MT5 feed, backups, Telegram); extending the news calendar before 2028; finishing the study plan (`docs/study_plan.md`, days 3-17, exercises in `backend/learning/`); re-running the already-registered E13 bid/ask report when its data download completes (no rule changes); answering questions.
-- **Not allowed:** new dashboard features, cards or panels; new strategies, variants, filters or parameter tweaks; new experiments or measurements; new skills/plugins; hosting/VPS work.
-- E21 (turn-of-month paper forward test) keeps running on its own. Check only the monthly Telegram report; no verdict before 36 trades (about 2029).
-- **Team (2026-11-21):** the main session is the leader; subagents in `.claude/agents/` are `builder` (writes code), `tester` (runs tests, read-only) and `reviewer` (checks for bugs and rule breaks, read-only). Flow: builder → tester → reviewer → leader reports to the owner. Use the team only for allowed work; small tasks the leader does alone. Only the leader commits or pushes, and only when the owner asks.
-- **Unfreeze only** if the owner says so in words, and only after the study plan is finished or E21 reaches 36 trades. If asked for a new feature, remind the owner of this freeze first.
+## 2a. ONE-IDEA UNFREEZE (owner decision 2026-11-21) — read this first
+History: frozen earlier on 2026-11-21 after 21 experiments, 53 strategy evaluations, 0 passes. The same day the owner unfroze it **for ONE new strategy idea only**, plus a weekly health check.
+- **The one idea:** must be genuinely different from everything in `docs/experiment_journal.md` (no FVG/sweep/ORB/VWAP/silver-bullet variants, no new filters on old strategies). The owner picks it. Pre-register it from `docs/preregistration_template.md` (year-by-year, nearby settings, pre-mortem) and commit the rules BEFORE any result. Run it ONCE. Exness cost gate applies. No tweaks after the result.
+  - Pass → paper forward test for months; nothing in `scanner.QUALIFIED` without the owner's separate approval; the 2025+ data only with separate approval.
+  - Fail or inconclusive → record it and re-freeze. No second idea without the owner saying so in words.
+- **Weekly health check:** a scheduled task (Saturday) runs tests, a safety check and a plain-English summary of the week's paper reports. It never changes strategies, rules, risk limits or data, and never commits.
+- **Still allowed:** bug fixes; upkeep (MT5, backups, Telegram); news calendar before 2028; the study plan (short plan: days 3, 4, 7, 8, 14, 15); the E13 report when its data completes.
+- **Still not allowed:** weekly strategy changes or tweaks (curve fitting); new dashboard features; more than one new idea; hosting/VPS work.
+- E21 (turn-of-month paper forward test) keeps running on its own; no verdict before 36 trades (about 2029).
+- **Team (2026-11-21):** the main session is the leader; subagents in `.claude/agents/` are `builder` (writes code), `tester` (runs tests, read-only) and `reviewer` (checks for bugs and rule breaks, read-only). Flow: builder → tester → reviewer → leader reports to the owner. Small tasks the leader does alone. Only the leader commits or pushes, and only when the owner asks.
 
 ## 3. Current mode — learning lab (since 2026-11-14)
 - Every strategy tested so far FAILS its pre-registered dev (2019–2022) + validation (2023–2024) test: 7 NAS100, 5 BTC, 2 daily trend, 1 intraday momentum, 7 gold. Scoreboard: `docs/lessons.md`. The 2025+ out-of-sample test has never been run (nothing qualifies).
