@@ -218,5 +218,15 @@
     "evaluations": 1, "outcome": "fail",
     "result": "Negative observed result. 1971-1999: 446 trades, -0.342% per trade after costs (-0.184% before costs), range -0.626% to -0.030%, beat 0% of random timing, 7 of 29 years positive, 0 of 4 nearby settings positive. 2000-2024: 400 trades, +0.203% (stress +0.045%) but the range crosses zero (-0.122% to +0.526%) and it beat only 87% of random timing. Before 2000 Nasdaq daily moves tended to continue (autocorrelation +0.205), so drops kept going. Project re-frozen (CLAUDE.md 2a).",
     "reports": ["docs/buy_the_drop_report.md"]
+  },
+  {
+    "id": "E23", "date": "2026-11-21", "kind": "strategy test",
+    "title": "FX carry: long the 2 highest-rate, short the 2 lowest-rate of 7 currencies (cancelled)",
+    "question": "Does monthly FX carry among USD, EUR, GBP, JPY, CHF, CAD, AUD beat random currency picks after a swap markup and spreads, in both 1980-2004 and 2005-2024?",
+    "rules": "docs/carry_preregistration.md", "rules_commit": "2e521ea",
+    "data": "Not run: only the USD rate file was downloaded (FRED refused automated downloads)",
+    "evaluations": 0, "outcome": "incomplete",
+    "result": "Cancelled by the owner before any result: the project covers NAS100, gold and BTC only. No rate or carry return was computed. Code and data removed; rules kept as history.",
+    "reports": []
   }
 ]

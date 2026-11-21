@@ -12,8 +12,8 @@ Success = rules followed, zero risk violations, reproducible backtest, working k
 - Weekend book: BTCUSDT from **Binance public market data** (no account, no key). Paper only; never send orders to Binance.
 - Frontend (Day 5): React + Vite + Tailwind + lightweight-charts
 
-## 2a. ONE FOREX IDEA (owner decision 2026-11-21) — read this first
-**Status now:** E22 (buy the drop) failed and the project was frozen. The same day the owner chose "Option B": unfreeze for ONE forex idea, **carry** (owner: "yes carry, download the data"), under the same one-idea rules below (pre-registered, run once, no tweaks; fail or inconclusive = frozen again). No other change is allowed by this: no forex dashboard, no chart lines, no second idea. The weekly health check keeps running.
+## 2a. FROZEN (2026-11-21) — read this first
+**Status now:** frozen. E22 (buy the drop) failed. The forex carry test (E23) was **cancelled by the owner before any result** ("this project don't trade forex, only gold, btc and nas"): its rules stay in `docs/carry_preregistration.md` as history; code and data were removed. The project covers NAS100, gold and BTC only. The idea scout was removed so the project can end. No new strategy idea, market, agent or feature unless the owner says so in words. The weekly health check keeps running. The one-idea rules below are kept as history.
 
 History: frozen earlier on 2026-11-21 after 21 experiments, 53 strategy evaluations, 0 passes. The same day the owner unfroze it **for ONE new strategy idea only**, plus a weekly health check.
 - **The one idea:** must be genuinely different from everything in `docs/experiment_journal.md` (no FVG/sweep/ORB/VWAP/silver-bullet variants, no new filters on old strategies). The owner picks it. Pre-register it from `docs/preregistration_template.md` (year-by-year, nearby settings, pre-mortem) and commit the rules BEFORE any result. Run it ONCE. Exness cost gate applies. No tweaks after the result.
@@ -23,7 +23,7 @@ History: frozen earlier on 2026-11-21 after 21 experiments, 53 strategy evaluati
 - **Still allowed:** bug fixes; upkeep (MT5, backups, Telegram); news calendar before 2028; the study plan (short plan: days 3, 4, 7, 8, 14, 15); the E13 report when its data completes.
 - **Still not allowed:** weekly strategy changes or tweaks (curve fitting); new dashboard features; more than one new idea; hosting/VPS work.
 - E21 (turn-of-month paper forward test) keeps running on its own; no verdict before 36 trades (about 2029).
-- **Team (2026-11-21):** the main session is the leader; subagents in `.claude/agents/` are `builder` (writes code), `tester` (runs tests, read-only) and `reviewer` (checks for bugs and rule breaks, read-only) and `idea-scout` (suggests at most 3 new ideas into `docs/idea_inbox.md`; never tests or looks at results, never edits anything else). Flow: builder → tester → reviewer → leader reports to the owner. Small tasks the leader does alone. Only the leader commits or pushes, and only when the owner asks. One word runs it: `/team` (health check) or `/team <task>` (`.claude/skills/team/SKILL.md`).
+- **Team (2026-11-21):** the main session is the leader; subagents in `.claude/agents/` are `builder` (writes code), `tester` (runs tests, read-only) and `reviewer` (checks for bugs and rule breaks, read-only). Flow: builder → tester → reviewer → leader reports to the owner. Small tasks the leader does alone. Only the leader commits or pushes, and only when the owner asks. One word runs it: `/team` (health check) or `/team <task>` (`.claude/skills/team/SKILL.md`).
 
 ## 3. Current mode — learning lab (since 2026-11-14)
 - Every strategy tested so far FAILS its pre-registered dev (2019–2022) + validation (2023–2024) test: 7 NAS100, 5 BTC, 2 daily trend, 1 intraday momentum, 7 gold. Scoreboard: `docs/lessons.md`. The 2025+ out-of-sample test has never been run (nothing qualifies).

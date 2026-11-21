@@ -10,9 +10,9 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-21 from `docs/experim
 
 ## Summary
 
-- Experiments: **22** (13 strategy tests or filters, 9 measurements or checks).
+- Experiments: **23** (14 strategy tests or filters, 9 measurements or checks).
 - Strategy evaluations so far: **54**. Passed: **0**.
-- Outcomes: Failed 10, Measured (no pass/fail) 9, In progress (no verdict) 2, Inconclusive 1.
+- Outcomes: Failed 10, Measured (no pass/fail) 9, In progress (no verdict) 3, Inconclusive 1.
 - Journal check: **OK**.
 
 | id | date | experiment | kind | pre-registered | evaluations | outcome |
@@ -38,7 +38,8 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-21 from `docs/experim
 | E19 | 2026-11-19 | Turn of the month: hold the Nasdaq over each month end (own idea) | strategy test | yes, before results | 1 | Inconclusive |
 | E20 | 2026-11-19 | News effect: how much NAS100, gold and BTC move in the 30 minutes after each US high-impact release | measurement | yes, before results | 0 | Measured (no pass/fail) |
 | E21 | 2026-11-19 | Turn of the month: paper forward test on MT5 USTEC (collecting) | strategy test | yes, before results | 0 | In progress (no verdict) |
-| E22 | 2026-11-21 | Buy the drop: Nasdaq at a 10-day-low close, hold 5 days (the one unfreeze idea) | strategy test | yes; result not committed yet | 1 | Failed |
+| E22 | 2026-11-21 | Buy the drop: Nasdaq at a 10-day-low close, hold 5 days (the one unfreeze idea) | strategy test | yes, before results | 1 | Failed |
+| E23 | 2026-11-21 | FX carry: long the 2 highest-rate, short the 2 lowest-rate of 7 currencies (cancelled) | strategy test | yes, before results | 0 | In progress (no verdict) |
 
 ## Details
 
@@ -217,6 +218,14 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-21 from `docs/experim
 - **Data:** FRED NASDAQCOM daily closes; dev 1971-1999, validation 2000-2024 (2025+ locked)
 - **Outcome:** Failed. Negative observed result. 1971-1999: 446 trades, -0.342% per trade after costs (-0.184% before costs), range -0.626% to -0.030%, beat 0% of random timing, 7 of 29 years positive, 0 of 4 nearby settings positive. 2000-2024: 400 trades, +0.203% (stress +0.045%) but the range crosses zero (-0.122% to +0.526%) and it beat only 87% of random timing. Before 2000 Nasdaq daily moves tended to continue (autocorrelation +0.205), so drops kept going. Project re-frozen (CLAUDE.md 2a).
 - **Report:** `docs/buy_the_drop_report.md`
+
+### E23 — FX carry: long the 2 highest-rate, short the 2 lowest-rate of 7 currencies (cancelled)
+
+- **Question:** Does monthly FX carry among USD, EUR, GBP, JPY, CHF, CAD, AUD beat random currency picks after a swap markup and spreads, in both 1980-2004 and 2005-2024?
+- **Rules:** `docs/carry_preregistration.md` (commit 2e521ea)
+- **Data:** Not run: only the USD rate file was downloaded (FRED refused automated downloads)
+- **Outcome:** In progress (no verdict). Cancelled by the owner before any result: the project covers NAS100, gold and BTC only. No rate or carry return was computed. Code and data removed; rules kept as history.
+- **Report:** 
 
 ## Adding a new experiment
 

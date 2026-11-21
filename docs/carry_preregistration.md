@@ -1,5 +1,7 @@
 # FX carry — rules written before any result
 
+> **CANCELLED 2026-11-21, before any result.** The owner decided the project covers NAS100, gold and BTC only. Only the USD rate file was downloaded; no rate or carry return was computed. Code and data were removed. Kept as history.
+
 Written 2026-11-21, before any interest rate or carry return was read or computed. Owner request: "Option B",
 "HIGHT RISK HIGHT REWARD", "yes carry, download the data" (the ONE forex idea, `CLAUDE.md` section 2a).
 
