@@ -15,9 +15,9 @@ Paper money only: there is no live order path in the code.
 - A 3-market scanner that shows a signal only from a strategy that passed its tests, otherwise **WAIT**.
 - An experiment journal in which every test is written down before it runs, failures included.
 
-**What was tested:** 21 experiments with 53 strategy evaluations: 7 intraday NAS100 strategies (ICT-style
+**What was tested:** 22 experiments with 54 strategy evaluations: 7 intraday NAS100 strategies (ICT-style
 FVG, liquidity sweep, opening range, VWAP, silver bullet), the same rules on gold and BTC, daily trend,
-intraday momentum, cost and volatility filters, slow multi-market trend, and turn of the month.
+intraday momentum, cost and volatility filters, slow multi-market trend, turn of the month, and buy the drop.
 Data: 1-minute bars 2019-2024 (development 2019-2022, validation 2023-2024). The 2025+ data stays locked.
 
 **Result: 0 passes.** No strategy made money after costs in both periods. The best, turn of the month,
@@ -31,8 +31,9 @@ Full list: `docs/experiment_journal.md`.
 4. A filter cannot create an edge that is not there.
 5. "No edge found" is a useful answer: it kept real money safe.
 
-**Status:** frozen, then unfrozen the same day for ONE new pre-registered idea plus a weekly
-health check (rules in `CLAUDE.md` section 2a). No weekly strategy tweaks.
+**Status:** frozen. The one allowed new idea (E22, buy the drop) was tested once on 2026-11-21 and
+failed (`docs/buy_the_drop_report.md`), so the project is frozen again (`CLAUDE.md` section 2a).
+A weekly health check keeps running.
 
 ## Backend quick start (PowerShell)
 

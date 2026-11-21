@@ -1,6 +1,6 @@
 # Experiment journal
 
-Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experiments.json`. Every experiment is listed, including every failure. Edit the JSON file, never this page.
+Made by `backend/scripts/experiment_journal.py` on 2026-11-21 from `docs/experiments.json`. Every experiment is listed, including every failure. Edit the JSON file, never this page.
 
 ## How to read it
 
@@ -10,9 +10,9 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 
 ## Summary
 
-- Experiments: **21** (12 strategy tests or filters, 9 measurements or checks).
-- Strategy evaluations so far: **53**. Passed: **0**.
-- Outcomes: Failed 9, Measured (no pass/fail) 9, In progress (no verdict) 2, Inconclusive 1.
+- Experiments: **22** (13 strategy tests or filters, 9 measurements or checks).
+- Strategy evaluations so far: **54**. Passed: **0**.
+- Outcomes: Failed 10, Measured (no pass/fail) 9, In progress (no verdict) 2, Inconclusive 1.
 - Journal check: **OK**.
 
 | id | date | experiment | kind | pre-registered | evaluations | outcome |
@@ -36,8 +36,9 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 | E17 | 2026-11-19 | Slow multi-market trend (10 markets, monthly) vs benchmarks | strategy test | yes, before results | 1 | Failed |
 | E18 | 2026-11-19 | Exness cost gate: NAS100 backtest trades re-priced with Exness spread | measurement | yes, before results | 0 | Measured (no pass/fail) |
 | E19 | 2026-11-19 | Turn of the month: hold the Nasdaq over each month end (own idea) | strategy test | yes, before results | 1 | Inconclusive |
-| E20 | 2026-11-19 | News effect: how much NAS100, gold and BTC move in the 30 minutes after each US high-impact release | measurement | yes; result not committed yet | 0 | Measured (no pass/fail) |
+| E20 | 2026-11-19 | News effect: how much NAS100, gold and BTC move in the 30 minutes after each US high-impact release | measurement | yes, before results | 0 | Measured (no pass/fail) |
 | E21 | 2026-11-19 | Turn of the month: paper forward test on MT5 USTEC (collecting) | strategy test | yes, before results | 0 | In progress (no verdict) |
+| E22 | 2026-11-21 | Buy the drop: Nasdaq at a 10-day-low close, hold 5 days (the one unfreeze idea) | strategy test | yes; result not committed yet | 1 | Failed |
 
 ## Details
 
@@ -208,6 +209,14 @@ Made by `backend/scripts/experiment_journal.py` on 2026-11-19 from `docs/experim
 - **Data:** MT5 USTEC M1 bars stored by the engine, month turns with entry on or after 2025-12-01
 - **Outcome:** In progress (no verdict). Running automatically (app/core/tom_forward.py, dashboard Results card, Telegram). No verdict before 36 trades (about 3 years). First 2 trades: +2.33% and -3.46% after costs. Paper only; never ordered.
 - **Report:** 
+
+### E22 — Buy the drop: Nasdaq at a 10-day-low close, hold 5 days (the one unfreeze idea)
+
+- **Question:** Does buying the Nasdaq Composite at a close that is the lowest of the last 10 trading days and selling 5 trading days later earn more than random timing, after Exness-like spread and overnight financing, in both 1971-1999 and 2000-2024?
+- **Rules:** `docs/buy_the_drop_preregistration.md` (commit 6943a95)
+- **Data:** FRED NASDAQCOM daily closes; dev 1971-1999, validation 2000-2024 (2025+ locked)
+- **Outcome:** Failed. Negative observed result. 1971-1999: 446 trades, -0.342% per trade after costs (-0.184% before costs), range -0.626% to -0.030%, beat 0% of random timing, 7 of 29 years positive, 0 of 4 nearby settings positive. 2000-2024: 400 trades, +0.203% (stress +0.045%) but the range crosses zero (-0.122% to +0.526%) and it beat only 87% of random timing. Before 2000 Nasdaq daily moves tended to continue (autocorrelation +0.205), so drops kept going. Project re-frozen (CLAUDE.md 2a).
+- **Report:** `docs/buy_the_drop_report.md`
 
 ## Adding a new experiment
 

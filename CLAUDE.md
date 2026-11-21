@@ -12,7 +12,9 @@ Success = rules followed, zero risk violations, reproducible backtest, working k
 - Weekend book: BTCUSDT from **Binance public market data** (no account, no key). Paper only; never send orders to Binance.
 - Frontend (Day 5): React + Vite + Tailwind + lightweight-charts
 
-## 2a. ONE-IDEA UNFREEZE (owner decision 2026-11-21) — read this first
+## 2a. FROZEN AGAIN (2026-11-21) — read this first
+**Status now:** the one unfreeze idea (E22, buy the drop) was run once and FAILED (negative observed result), so the project is **frozen again**. No new strategy idea without the owner saying so in words. The weekly health check keeps running. The rules below are kept as history and still apply to any future one-idea unfreeze.
+
 History: frozen earlier on 2026-11-21 after 21 experiments, 53 strategy evaluations, 0 passes. The same day the owner unfroze it **for ONE new strategy idea only**, plus a weekly health check.
 - **The one idea:** must be genuinely different from everything in `docs/experiment_journal.md` (no FVG/sweep/ORB/VWAP/silver-bullet variants, no new filters on old strategies). The owner picks it. Pre-register it from `docs/preregistration_template.md` (year-by-year, nearby settings, pre-mortem) and commit the rules BEFORE any result. Run it ONCE. Exness cost gate applies. No tweaks after the result.
   - Pass → paper forward test for months; nothing in `scanner.QUALIFIED` without the owner's separate approval; the 2025+ data only with separate approval.
@@ -21,7 +23,7 @@ History: frozen earlier on 2026-11-21 after 21 experiments, 53 strategy evaluati
 - **Still allowed:** bug fixes; upkeep (MT5, backups, Telegram); news calendar before 2028; the study plan (short plan: days 3, 4, 7, 8, 14, 15); the E13 report when its data completes.
 - **Still not allowed:** weekly strategy changes or tweaks (curve fitting); new dashboard features; more than one new idea; hosting/VPS work.
 - E21 (turn-of-month paper forward test) keeps running on its own; no verdict before 36 trades (about 2029).
-- **Team (2026-11-21):** the main session is the leader; subagents in `.claude/agents/` are `builder` (writes code), `tester` (runs tests, read-only) and `reviewer` (checks for bugs and rule breaks, read-only). Flow: builder → tester → reviewer → leader reports to the owner. Small tasks the leader does alone. Only the leader commits or pushes, and only when the owner asks. One word runs it: `/team` (health check) or `/team <task>` (`.claude/skills/team/SKILL.md`).
+- **Team (2026-11-21):** the main session is the leader; subagents in `.claude/agents/` are `builder` (writes code), `tester` (runs tests, read-only) and `reviewer` (checks for bugs and rule breaks, read-only) and `idea-scout` (suggests at most 3 new ideas into `docs/idea_inbox.md`; never tests or looks at results, never edits anything else). Flow: builder → tester → reviewer → leader reports to the owner. Small tasks the leader does alone. Only the leader commits or pushes, and only when the owner asks. One word runs it: `/team` (health check) or `/team <task>` (`.claude/skills/team/SKILL.md`).
 
 ## 3. Current mode — learning lab (since 2026-11-14)
 - Every strategy tested so far FAILS its pre-registered dev (2019–2022) + validation (2023–2024) test: 7 NAS100, 5 BTC, 2 daily trend, 1 intraday momentum, 7 gold. Scoreboard: `docs/lessons.md`. The 2025+ out-of-sample test has never been run (nothing qualifies).
@@ -135,6 +137,7 @@ nas100-control-center/
 - [x] 2026-11-20: Reasons and cooling-off for your own actions + a process line in the monthly report (finance-psychology skill). `app/core/manual.py`: KILL is never delayed and the reason is optional; reset needs a reason (>= 5 characters) and is allowed only within 2 minutes of KILL (misclick) or from the next New York day (state key `kill_switch_ts`; `/api/overview` gives `kill_reset_after`). Auto-trading and strategy changes save an optional reason. All are events of type `manual`. Monthly Telegram report: "Process: paper trades ended by the plan X of Y · manual actions (KILL, reset, other) · risk manager said no to N paper signals" plus the last 5 actions with reasons. Do not shorten the wait or drop the reason without the owner asking.
 - NAS100 history for backtests = HistData (default; `--data dukascopy` / `dukascopy` arg only for the old 2019-2020 partial set). Dukascopy BID+ASK is used only for the bid/ask re-tests.
 - Data facts: MT5 times = server time (Europe/Athens for MetaQuotes-Demo). Dukascopy month in URL is 0-based, price ÷1000.
+- [x] 2026-11-21: **E22 buy the drop** (pre-registered, commit 6943a95; `app/backtest/buy_the_drop.py`, `scripts/buy_the_drop_test.py`, `docs/buy_the_drop_report.md`, tests `tests/test_buy_the_drop.py`). Run once: negative observed result (1971-1999 −0.342%/trade, beat 0% of random; 2000-2024 +0.203% but range crosses 0, beat 87%). Project frozen again (section 2a).
 
 ## 12. Pending decisions
 - None open. Settled: MetaQuotes-Demo USTEC min lot 0.1 = $0.10/pt, spread ~1 pt (2026-11-13); MT5 keeps ~60 days of M1, so history comes from HistData 2019-2024.
