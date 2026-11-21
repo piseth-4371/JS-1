@@ -17,6 +17,7 @@ The project is finished as a tool. Result so far: 21 experiments, 53 strategy ev
 - **Allowed:** bug fixes; keeping it running (MT5 feed, backups, Telegram); extending the news calendar before 2028; finishing the study plan (`docs/study_plan.md`, days 3-17, exercises in `backend/learning/`); re-running the already-registered E13 bid/ask report when its data download completes (no rule changes); answering questions.
 - **Not allowed:** new dashboard features, cards or panels; new strategies, variants, filters or parameter tweaks; new experiments or measurements; new skills/plugins; hosting/VPS work.
 - E21 (turn-of-month paper forward test) keeps running on its own. Check only the monthly Telegram report; no verdict before 36 trades (about 2029).
+- **Team (2026-11-21):** the main session is the leader; subagents in `.claude/agents/` are `builder` (writes code), `tester` (runs tests, read-only) and `reviewer` (checks for bugs and rule breaks, read-only). Flow: builder → tester → reviewer → leader reports to the owner. Use the team only for allowed work; small tasks the leader does alone. Only the leader commits or pushes, and only when the owner asks.
 - **Unfreeze only** if the owner says so in words, and only after the study plan is finished or E21 reaches 36 trades. If asked for a new feature, remind the owner of this freeze first.
 
 ## 3. Current mode — learning lab (since 2026-11-14)
