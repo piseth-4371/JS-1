@@ -14,7 +14,12 @@ and practise Python. **Not** to find a new signal.
    `.\.venv\Scripts\python learning\chNN_*.py`
 5. Ask Claude to review your code (the `teach-step` skill: hints first, the model solution only after your try).
 
-## The plan
+## Short plan (owner's choice, 2026-11-21)
+Days **3, 4, 7, 8, 14, 15** only: expected value, random walk, volatility, Sharpe, Kelly, Monte Carlo.
+They explain why the project found no edge. The other days are optional, for later.
+Day 3 exercise: `backend/learning/ch03_expected_value.py` (ready).
+
+## The full plan
 | Day | Book chapter | Exercise on your data | Question it answers |
 |---|---|---|---|
 | 1 | 1 Returns | `ch01_returns.py` (ready) | Biggest NAS100 daily fall 2019–2024? Why do log returns add up? |

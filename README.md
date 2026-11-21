@@ -2,6 +2,38 @@
 
 See `CLAUDE.md` for the project manual and `docs/decisions.md` for the decision log.
 
+## Results (project frozen 2026-11-21)
+
+**What it is:** a paper-trading control center for the Nasdaq-100 (Exness `USTEC`), with gold and BTC
+on the side. FastAPI + SQLite backend, React dashboard, MT5 demo price feed, Telegram alerts.
+Paper money only: there is no live order path in the code.
+
+**What was built**
+- A backtester and a paper engine that agree exactly (126 of 126 signals identical in a replay check).
+- A deterministic risk manager with veto: 0.5% risk per trade, daily and weekly loss locks, kill switch.
+- A news blackout (±30 min around CPI, NFP, FOMC, GDP, PCE; calendar to the end of 2027).
+- A 3-market scanner that shows a signal only from a strategy that passed its tests, otherwise **WAIT**.
+- An experiment journal in which every test is written down before it runs, failures included.
+
+**What was tested:** 21 experiments with 53 strategy evaluations: 7 intraday NAS100 strategies (ICT-style
+FVG, liquidity sweep, opening range, VWAP, silver bullet), the same rules on gold and BTC, daily trend,
+intraday momentum, cost and volatility filters, slow multi-market trend, and turn of the month.
+Data: 1-minute bars 2019-2024 (development 2019-2022, validation 2023-2024). The 2025+ data stays locked.
+
+**Result: 0 passes.** No strategy made money after costs in both periods. The best, turn of the month,
+was inconclusive and now runs as a paper forward test (no verdict before 36 trades, about 2029).
+Full list: `docs/experiment_journal.md`.
+
+**What was learned** (`docs/lessons.md`)
+1. Costs decide most intraday results. Exness `USTEC` spread is about 2.9 points, double the first assumption.
+2. Small samples lie: early "winners" turned negative on the full data.
+3. A result must hold in both periods, not just one.
+4. A filter cannot create an edge that is not there.
+5. "No edge found" is a useful answer: it kept real money safe.
+
+**Status:** feature freeze (rules in `CLAUDE.md` section 2a). Only bug fixes, upkeep, and the study plan
+(`docs/study_plan.md`) continue.
+
 ## Backend quick start (PowerShell)
 
 ```powershell

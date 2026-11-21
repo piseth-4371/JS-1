@@ -12,6 +12,13 @@ Success = rules followed, zero risk violations, reproducible backtest, working k
 - Weekend book: BTCUSDT from **Binance public market data** (no account, no key). Paper only; never send orders to Binance.
 - Frontend (Day 5): React + Vite + Tailwind + lightweight-charts
 
+## 2a. FEATURE FREEZE (owner decision 2026-11-21) — read this first
+The project is finished as a tool. Result so far: 21 experiments, 53 strategy evaluations, 0 passes.
+- **Allowed:** bug fixes; keeping it running (MT5 feed, backups, Telegram); extending the news calendar before 2028; finishing the study plan (`docs/study_plan.md`, days 3-17, exercises in `backend/learning/`); re-running the already-registered E13 bid/ask report when its data download completes (no rule changes); answering questions.
+- **Not allowed:** new dashboard features, cards or panels; new strategies, variants, filters or parameter tweaks; new experiments or measurements; new skills/plugins; hosting/VPS work.
+- E21 (turn-of-month paper forward test) keeps running on its own. Check only the monthly Telegram report; no verdict before 36 trades (about 2029).
+- **Unfreeze only** if the owner says so in words, and only after the study plan is finished or E21 reaches 36 trades. If asked for a new feature, remind the owner of this freeze first.
+
 ## 3. Current mode — learning lab (since 2026-11-14)
 - Every strategy tested so far FAILS its pre-registered dev (2019–2022) + validation (2023–2024) test: 7 NAS100, 5 BTC, 2 daily trend, 1 intraday momentum, 7 gold. Scoreboard: `docs/lessons.md`. The 2025+ out-of-sample test has never been run (nothing qualifies).
 - The paper engine still runs ORB on the demo feed for learning only. It is not expected to make money.
